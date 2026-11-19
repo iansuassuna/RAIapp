@@ -5,6 +5,8 @@ export * from "./button";
 export * from "./card";
 export * from "./checkbox-group";
 export * from "./confirm-button";
+export * from "./deadline-rows";
+export * from "./decision-form";
 export * from "./empty-state";
 export * from "./input";
 export * from "./password-input";

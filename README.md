@@ -18,11 +18,12 @@ Outros scripts: `bun run build` (inclui checagem de tipos), `bun run start`, `bu
 | `/login` | Login com validação e mostrar/ocultar senha |
 | `/cadastro` | Cadastro com nome, e-mail, senha + confirmação, eixo e time |
 | `/dashboard` | Desempenho, trajetória, atividades recentes |
-| `/eixos/[eixo]` | Gestão de Eixos — abas **Visão geral**, **Projetos**, **Membros** e, para a coordenação, **Requisições**. Membro e coordenação veem só o próprio eixo; diretoria vê os 3 |
+| `/eixos/[eixo]` | Gestão de Eixos — abas **Visão geral**, **Projetos**, **Membros** e, para coordenação e diretoria, **Painel da Coordenação** (requisições, compras aguardando, autorizações ativas, verbas, propostas de inventário). Membro e coordenação veem só o próprio eixo; diretoria vê os 3 |
 | `/eixos/[eixo]/projetos/[id]` | Página do projeto: tarefas, prazos, componentes do RAITec e membros afiliados (coordenação edita) |
 | `/eixos/[eixo]/membros/[id]` | Avaliações cruzadas detalhadas do membro (só coordenação do eixo) |
 | `/minha-area` | Projetos afiliados, prazos e tarefas atribuídos, requisições de componentes e recursos (membros → coordenação do eixo; coordenadores → diretoria) |
-| `/diretoria` | Área da diretoria: analisar e resolver as requisições feitas pelos coordenadores |
+| `/diretoria` | Área da diretoria: analisar os pedidos dos coordenadores e marcar como feitos |
+| `/inventario` | Inventário do RAITec com filtros (categoria, armário, eixo proprietário). Todos veem; coordenação/diretoria editam; time Processos propõe |
 | `/avaliacao` | Avaliação Cruzada: lista de colegas, formulário com escala 1–5 por critério e médias recebidas |
 
 No celular as telas de login/cadastro mostram o logo no topo; no desktop aparece um painel da marca à esquerda.

@@ -7,7 +7,8 @@ import { isEixo } from "@/config/options";
 import { DeleteProjectButton, ProjectComponents, ProjectMembers, ProjectSummary, TaskList } from "@/features/projetos";
 import { deleteProjectAction } from "@/features/projetos/actions";
 import { canManageProjects } from "@/lib/access";
-import { getInventory, getLookups, getMembersByIds, getProject } from "@/lib/api";
+import { getInventory, getLookups, getMembersByIds, getProject, getProjectPurchases } from "@/lib/api";
+import { requestsToDeadlineRows } from "@/lib/deadlines";
 import { getCurrentMember } from "@/lib/session";
 
 type Props = { params: Promise<{ eixo: string; projectId: string }> };
@@ -28,11 +29,14 @@ export default async function ProjectPage({ params }: Props) {
   if (!allowed) forbidden();
 
   const manages = canManageProjects(member, eixo);
-  const [inventory, { memberNames }, affiliated] = await Promise.all([
+  const [inventory, lookups, affiliated, purchases] = await Promise.all([
     getInventory(),
     getLookups(),
     getMembersByIds(project.memberIds),
+    getProjectPurchases(project.id),
   ]);
+  const { memberNames } = lookups;
+  const purchaseRows = requestsToDeadlineRows(purchases, lookups, { viewerId: member.id });
   const listHref = `/eixos/${eixo}/projetos`;
 
   return (
@@ -59,7 +63,7 @@ export default async function ProjectPage({ params }: Props) {
               )
             }
           />
-          <TaskList project={project} memberNames={memberNames} viewerId={member.id} canManage={manages} />
+          <TaskList project={project} memberNames={memberNames} viewerId={member.id} canManage={manages} purchaseRows={purchaseRows} />
         </div>
         <div className="space-y-8">
           <ProjectMembers project={project} members={affiliated} />

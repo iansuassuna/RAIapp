@@ -1,8 +1,8 @@
 import { ClipboardList, Trash2 } from "lucide-react";
-import { Badge, Card, ConfirmButton, EmptyState, SectionTitle } from "@/components/ui";
+import { Badge, Card, ConfirmButton, DeadlineRows, EmptyState, SectionTitle } from "@/components/ui";
 import { TASK_STATUS_LABEL, TASK_STATUS_TONE } from "@/config/options";
 import { formatShortDate, isOverdue } from "@/lib/format";
-import type { Project } from "@/types";
+import type { DeadlineRow, Project } from "@/types";
 import { addTaskAction, deleteTaskAction, updateTaskStatusAction } from "../actions";
 import { TaskForm } from "./task-form";
 import { TaskStatusSelect } from "./task-status-select";
@@ -13,17 +13,19 @@ type Props = {
   viewerId: string;
   /** Coordenação do eixo: cria, exclui e muda o status de qualquer tarefa. */
   canManage: boolean;
+  /** Compras aprovadas vinculadas ao projeto (aparecem junto das tarefas). */
+  purchaseRows?: DeadlineRow[];
 };
 
 /** Tarefas e prazos do projeto. O responsável muda o status da própria tarefa. */
-export function TaskList({ project, memberNames, viewerId, canManage }: Props) {
+export function TaskList({ project, memberNames, viewerId, canManage, purchaseRows = [] }: Props) {
   const tasks = [...project.tasks].sort((a, b) => a.deadline.localeCompare(b.deadline));
 
   return (
     <section aria-labelledby="tarefas" className="space-y-3">
       <SectionTitle id="tarefas">Tarefas e prazos</SectionTitle>
       <Card className="p-2">
-        {tasks.length === 0 ? (
+        {tasks.length === 0 && purchaseRows.length === 0 ? (
           <EmptyState icon={ClipboardList} title="Nenhuma tarefa cadastrada">
             {canManage ? "Adicione a primeira tarefa abaixo." : "A coordenação ainda não criou tarefas."}
           </EmptyState>
@@ -61,6 +63,7 @@ export function TaskList({ project, memberNames, viewerId, canManage }: Props) {
                 </li>
               );
             })}
+            <DeadlineRows rows={purchaseRows} />
           </ul>
         )}
       </Card>

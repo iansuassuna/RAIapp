@@ -1,13 +1,16 @@
 import { ClipboardList } from "lucide-react";
 import Link from "next/link";
-import { Card, EmptyState, SectionTitle } from "@/components/ui";
+import { Card, DeadlineRows, EmptyState, SectionTitle } from "@/components/ui";
 import { formatShortDate, isOverdue } from "@/lib/format";
-import type { Project, Task } from "@/types";
+import type { DeadlineRow, Project, Task } from "@/types";
 import { updateTaskStatusAction } from "../actions";
 import { TaskStatusSelect } from "./task-status-select";
 
-/** Tarefas atribuídas ao membro, de todos os projetos, ordenadas por prazo. */
-export function AssignedTasks({ items }: { items: { task: Task; project: Project }[] }) {
+/**
+ * Tarefas atribuídas ao membro (de todos os projetos) + prazos de requisições em andamento
+ * (compras, verbas, reuniões…), ordenados por prazo.
+ */
+export function AssignedTasks({ items, requestRows = [] }: { items: { task: Task; project: Project }[]; requestRows?: DeadlineRow[] }) {
   const open = items.filter(({ task }) => task.status !== "concluida");
   const late = open.filter(({ task }) => isOverdue(task)).length;
 
@@ -16,11 +19,13 @@ export function AssignedTasks({ items }: { items: { task: Task; project: Project
       <div>
         <SectionTitle id="minhas-tarefas">Prazos e tarefas</SectionTitle>
         <p className="text-xs text-ink-subtle">
-          {open.length} em aberto{late > 0 && <span className="font-semibold text-danger-500"> · {late} atrasada(s)</span>}
+          {open.length} {open.length === 1 ? "tarefa" : "tarefas"} em aberto
+          {requestRows.length > 0 && ` · ${requestRows.length} de requisições`}
+          {late > 0 && <span className="font-semibold text-danger-500"> · {late} atrasada(s)</span>}
         </p>
       </div>
       <Card className="p-2">
-        {items.length === 0 ? (
+        {items.length === 0 && requestRows.length === 0 ? (
           <EmptyState icon={ClipboardList} title="Nenhuma tarefa atribuída a você" />
         ) : (
           <ul className="divide-y divide-line/70">
@@ -49,6 +54,7 @@ export function AssignedTasks({ items }: { items: { task: Task; project: Project
                 </li>
               );
             })}
+            <DeadlineRows rows={requestRows} />
           </ul>
         )}
       </Card>

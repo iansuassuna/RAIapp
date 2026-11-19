@@ -27,6 +27,7 @@ export async function getLookups() {
     /** "Coordenação · Inovação", "Mídias · Inovação"… */
     memberContexts: Object.fromEntries(db.members.map((m) => [m.id, describeMember(m)])),
     componentNames: Object.fromEntries(db.inventory.map((i) => [i.id, i.name])),
+    components: Object.fromEntries(db.inventory.map((i) => [i.id, { name: i.name, cabinet: i.cabinet, ownerEixo: i.ownerEixo }])),
     projectNames: Object.fromEntries(db.projects.map((p) => [p.id, p.name])),
   };
 }

@@ -12,7 +12,8 @@ src/
 │   │   ├── dashboard/page.tsx
 │   │   ├── eixos/page.tsx    # redireciona para o eixo do membro
 │   │   ├── eixos/[eixo]/     # layout (acesso + abas): visão geral, projetos/[projectId](/editar), projetos/novo,
-│   │   │                     #   membros/[memberId] (avaliações — coordenação), requisicoes (coordenação)
+│   │   │                     #   membros/[memberId] (avaliações — coordenação), painel (Painel da Coordenação)
+│   │   ├── inventario/       # inventário (todos veem), novo, [id], [id]/editar
 │   │   ├── minha-area/       # projetos afiliados, tarefas e prazos, requisicoes (diretoria é redirecionada)
 │   │   ├── diretoria/        # fila de requisições dos coordenadores
 │   │   ├── forbidden.tsx     # tela "Sem acesso" 
@@ -28,7 +29,8 @@ src/
 │   ├── dashboard/            # PerformanceCard, TrajectoryGrid, RecentActivities
 │   ├── eixos/                # EixoTabs, EixoIndicators, TeamPerformance, EixoMembers, EixoGoals
 │   ├── projetos/             # ProjectList/Card/Form/Summary, TaskList/Form, ProjectComponents, AssignedTasks + actions
-│   ├── requisicoes/          # RequestForm, MyRequests, RequestQueue, InventoryOverview + actions
+│   ├── requisicoes/          # RequestForm (por tipo), DirectorRequestForm, MyRequests, RequestPanel, PurchaseCompleteForm + actions
+│   ├── inventario/           # InventoryBrowser, InventoryForm, ProposalList, ItemUsage + actions
 │   └── avaliacao/            # CrossEvaluation, EvaluationForm, RatingScale, ReceivedScores, MemberEvaluations + actions
 ├── config/                   # options.ts (eixos, times, rótulos/tons de status, escala 1–5), navigation.ts
 ├── lib/                      # api/ (dados), access.ts (permissões), session.ts (membro atual), db.ts (banco em memória),
@@ -50,7 +52,9 @@ src/
 
 - Vínculos: `membro` tem eixo e time; `coordenador` tem eixo e **não tem time**; `diretoria` **não tem eixo nem time**. `Member` é uma união por papel — trate `eixo`/`time` como possivelmente `null` e exiba com `describeMember()`.
 - `diretoria` vê todos os eixos (leitura); `coordenador` (um por eixo) e `membro` só o próprio. A Avaliação Cruzada inclui colegas de todos os eixos.
-- Requisições: membros pedem à coordenação do eixo; coordenadores pedem à diretoria (`/diretoria`). A diretoria não faz requisições.
+- Requisições: membros pedem à coordenação do eixo, escolhendo o tipo (componente do inventário, reunião, autorização de uso, verba, componente não disponível, outros); coordenadores pedem à diretoria (`/diretoria`) só com título, explicação e justificativa. A diretoria não faz requisições, mas age no Painel da Coordenação de qualquer eixo.
+- Depois de aprovada, cada requisição segue o ciclo do seu tipo (`config/requests.ts`). Compra feita cria o item no inventário em uso e o liga ao projeto. Prazos de requisições aparecem em "Prazos e tarefas" e nas tarefas do projeto.
+- Inventário: todos veem tudo; itens têm eixo proprietário (ou nenhum), armário e categoria. Diretoria edita tudo; coordenação, os do próprio eixo e os sem dono; o time Processos propõe alterações, aprovadas pela coordenação do eixo dono (sem dono: qualquer coordenação) ou pela diretoria.
 - Coordenação do eixo: CRUD de projetos (tarefas, prazos, componentes, membros afiliados), resolve requisições e vê avaliações detalhadas. Membro: muda o status das próprias tarefas e faz requisições.
 - Regras em `lib/access.ts` (puras e testadas); filtragem e checagem de escrita em `lib/api` (o membro é parâmetro); páginas chamam `forbidden()` quando a API devolve `null`.
 - Escritas: Server Actions em `features/<x>/actions.ts` → `lib/api` → banco em memória `lib/db.ts` (temporário; zera ao reiniciar o servidor).
@@ -102,6 +106,8 @@ Definidos uma única vez em `src/app/globals.css` dentro de `@theme`. O Tailwind
 | `CheckboxGroup` | lista de checkboxes reais (valores repetidos viram array) |
 | `ConfirmButton` | ação destrutiva em dois cliques |
 | `SectionTabs` | abas de seção por rota, com contador opcional |
+| `DecisionForm` | aprovar/recusar com observação |
+| `DeadlineRows` | prazos de requisições dentro de listas de tarefas |
 
 Variantes são feitas com **class-variance-authority (cva)** e combinadas com `cn()` (clsx + tailwind-merge), então qualquer `className` passado sobrescreve sem conflito.
 

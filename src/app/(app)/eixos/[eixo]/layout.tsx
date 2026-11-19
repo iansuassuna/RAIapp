@@ -3,8 +3,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { SectionTabs, type SectionTab } from "@/components/ui";
 import { eixoLabel, isEixo } from "@/config/options";
 import { EixoTabs } from "@/features/eixos";
-import { canManageEixo, canViewEixo, getAccessibleEixos } from "@/lib/access";
-import { countPendingRequests } from "@/lib/api";
+import { canManageEixo, canUseCoordinationPanel, canViewEixo, getAccessibleEixos } from "@/lib/access";
+import { countPendingRequests, getPanelProposals } from "@/lib/api";
 import { getCurrentMember } from "@/lib/session";
 
 /** Área de um eixo: checa acesso uma vez e monta cabeçalho + abas de seção. */
@@ -24,7 +24,10 @@ export default async function EixoLayout({ children, params }: { children: React
     { href: `${base}/projetos`, label: "Projetos" },
     { href: `${base}/membros`, label: "Membros" },
   ];
-  if (manages) tabs.push({ href: `${base}/requisicoes`, label: "Requisições", count: countPendingRequests({ reviewer: "coordenacao", eixo }) });
+  if (canUseCoordinationPanel(member, eixo)) {
+    const pending = countPendingRequests({ reviewer: "coordenacao", eixo }) + (await getPanelProposals(member, eixo)).length;
+    tabs.push({ href: `${base}/painel`, label: "Painel da Coordenação", count: pending });
+  }
 
   return (
     <div className="space-y-6 pt-7">

@@ -1,14 +1,16 @@
 import { EIXOS } from "@/config/options";
-import type { Eixo, Member, Project, ResourceRequest, Task } from "@/types";
+import type { Eixo, InventoryItem, Member, Project, ResourceRequest, Task } from "@/types";
 
 /**
  * Regras de acesso — fonte única da verdade.
  * Funções puras (sem Next/cookies) para serem usadas no servidor e testadas com `bun test`.
  *
- * - Diretoria (sem eixo): vê todos os eixos (somente leitura) e resolve as requisições dos coordenadores.
- * - Coordenador (sem time): gerencia o próprio eixo (projetos, requisições dos membros, avaliações
- *   detalhadas) e faz requisições à diretoria.
- * - Membro: vê o próprio eixo; atualiza as próprias tarefas e faz requisições à coordenação.
+ * - Diretoria (sem eixo): vê todos os eixos; age no Painel da Coordenação de qualquer eixo; resolve
+ *   as requisições dos coordenadores; edita qualquer item do inventário. Não gerencia projetos.
+ * - Coordenador (sem time): gerencia o próprio eixo (projetos, Painel da Coordenação, avaliações
+ *   detalhadas); edita itens do inventário do próprio eixo e os sem propriedade; pede à diretoria.
+ * - Membro: vê o próprio eixo e todo o inventário; atualiza as próprias tarefas e faz requisições.
+ *   Quem é do time Processos propõe alterações no inventário (aplicadas só depois de aprovadas).
  */
 type Viewer = Pick<Member, "eixo" | "role">;
 type ViewerWithId = Pick<Member, "id" | "eixo" | "role">;
@@ -28,8 +30,13 @@ export function canManageEixo(viewer: Viewer, eixo: Eixo) {
 
 export const canManageProjects = canManageEixo;
 
-/** Fila de requisições dos membros de um eixo (aba Requisições do eixo). */
-export const canReviewEixoRequests = canManageEixo;
+/** Painel da Coordenação de um eixo: coordenação do eixo ou diretoria (que age em todos). */
+export function canUseCoordinationPanel(viewer: Viewer, eixo: Eixo) {
+  return viewer.role === "diretoria" || canManageEixo(viewer, eixo);
+}
+
+/** Fila de requisições dos membros de um eixo (no Painel da Coordenação). */
+export const canReviewEixoRequests = canUseCoordinationPanel;
 
 /** Fila de requisições dos coordenadores (área da diretoria). */
 export function canReviewDirectorRequests(viewer: Viewer) {
@@ -62,4 +69,41 @@ export function canUpdateTaskStatus(viewer: ViewerWithId, project: Pick<Project,
 export function canRequestForProject(viewer: ViewerWithId, project: Pick<Project, "eixo" | "memberIds">) {
   if (viewer.role === "coordenador") return project.eixo === viewer.eixo;
   return viewer.role === "membro" && project.eixo === viewer.eixo && project.memberIds.includes(viewer.id);
+}
+
+/* ---------- Inventário ---------- */
+
+/** Todo mundo vê o inventário inteiro, independente de propriedade. */
+export function canViewInventory(_viewer: Viewer) {
+  return true;
+}
+
+/** Edita direto: diretoria em qualquer item; coordenação nos do próprio eixo e nos sem propriedade. */
+export function canEditInventoryItem(viewer: Viewer, item: Pick<InventoryItem, "ownerEixo">) {
+  if (viewer.role === "diretoria") return true;
+  return viewer.role === "coordenador" && (item.ownerEixo === null || item.ownerEixo === viewer.eixo);
+}
+
+/** Membro do time Processos: propõe alterações, que só valem depois de aprovadas. */
+export function canProposeInventoryChange(viewer: Pick<Member, "role" | "time">) {
+  return viewer.role === "membro" && viewer.time === "processos";
+}
+
+/**
+ * Quem aprova uma proposta: a coordenação do eixo dono do item (ou, sem dono, qualquer coordenação);
+ * a diretoria aprova qualquer uma. `ownerEixo` = dono atual do item (ou o proposto, ao criar).
+ */
+export function canApproveInventoryProposal(viewer: Viewer, ownerEixo: Eixo | null) {
+  if (viewer.role === "diretoria") return true;
+  return viewer.role === "coordenador" && (ownerEixo === null || ownerEixo === viewer.eixo);
+}
+
+/**
+ * Eixos que a pessoa pode escolher como dono de um item (null = sem propriedade).
+ * Time Processos escolhe qualquer um (vira proposta para o dono aprovar).
+ */
+export function assignableOwners(viewer: Pick<Member, "role" | "eixo" | "time">): (Eixo | null)[] {
+  const all: (Eixo | null)[] = [null, ...EIXOS.map((e) => e.value)];
+  if (canProposeInventoryChange(viewer) && viewer.role === "membro") return all;
+  return all.filter((owner) => canEditInventoryItem(viewer, { ownerEixo: owner }));
 }

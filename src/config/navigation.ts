@@ -1,4 +1,4 @@
-import { ClipboardCheck, House, Landmark, Layers, UserRound, type LucideIcon } from "lucide-react";
+import { Boxes, ClipboardCheck, House, Landmark, Layers, UserRound, type LucideIcon } from "lucide-react";
 import type { Role } from "@/types";
 
 export type NavItem = { href: string; label: string; icon: LucideIcon };
@@ -11,6 +11,7 @@ export function getNavItems(role: Role): NavItem[] {
       { href: "/dashboard", label: "Início", icon: House },
       { href: "/diretoria", label: "Diretoria", icon: Landmark },
       { href: "/eixos", label: "Eixos", icon: Layers },
+      { href: "/inventario", label: "Inventário", icon: Boxes },
       { href: "/avaliacao", label: "Avaliação", icon: ClipboardCheck },
     ];
   }
@@ -18,6 +19,7 @@ export function getNavItems(role: Role): NavItem[] {
     { href: "/dashboard", label: "Início", icon: House },
     { href: "/minha-area", label: "Minha área", icon: UserRound },
     { href: "/eixos", label: "Meu eixo", icon: Layers },
+    { href: "/inventario", label: "Inventário", icon: Boxes },
     { href: "/avaliacao", label: "Avaliação", icon: ClipboardCheck },
   ];
 }

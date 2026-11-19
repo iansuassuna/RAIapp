@@ -6,7 +6,6 @@ import type {
   Member,
   MemberStanding,
   ProjectStatus,
-  RequestKind,
   RequestReviewer,
   RequestStatus,
   Role,
@@ -86,10 +85,6 @@ export const TASK_STATUS_TONE: Record<TaskStatus, "brand" | "warning" | "success
 };
 export const TASK_STATUSES = Object.keys(TASK_STATUS_LABEL) as TaskStatus[];
 
-export const REQUEST_KIND_LABEL: Record<RequestKind, string> = {
-  componente: "Componente",
-  recurso: "Recurso",
-};
 export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   pendente: "Pendente",
   aprovada: "Aprovada",
@@ -148,4 +143,9 @@ export function timeLabel(time: Time) {
 
 export function isEixo(value: unknown): value is Eixo {
   return EIXOS.some((e) => e.value === value);
+}
+
+/** Opções de <select> para eixo proprietário ("sem" = sem propriedade). */
+export function ownerSelectOptions(owners: (Eixo | null)[]) {
+  return owners.map((o) => ({ value: o ?? "sem", label: o ? eixoLabel(o) : "Sem propriedade" }));
 }

@@ -19,17 +19,20 @@ Referência completa (tabela de tokens, variantes): `docs/DESIGN_SYSTEM.md`. Est
 ```
 app/(auth)/…        rotas públicas (login, cadastro) — layout com painel da marca no desktop
 app/(app)/…         rotas internas — AppHeader + BottomNav + forbidden.tsx
-  eixos/[eixo]/       layout (checa acesso + abas) → page (visão geral), projetos/, projetos/[projectId]/(editar), membros/, membros/[memberId], requisicoes/
+  eixos/[eixo]/       layout (checa acesso + abas) → page (visão geral), projetos/, projetos/[projectId]/(editar), membros/, membros/[memberId], painel/ (Painel da Coordenação)
+  inventario/         lista com filtros, novo, [id] (detalhe + uso), [id]/editar
   minha-area/         layout (abas; diretoria é redirecionada) → page (projetos afiliados + tarefas), requisicoes/
   diretoria/          fila de requisições dos coordenadores (só diretoria)
 components/ui/      primitivos genéricos, sem regra de negócio (exportados em ui/index.ts)
 components/brand/   Logo / LogoMark
 components/layout/  AppHeader, BottomNav
 features/<dominio>/ components/ + schemas.ts (zod) + actions.ts ("use server"); expõe componentes em index.ts
-                    domínios: auth, dashboard, eixos, projetos, requisicoes, avaliacao
-config/             options.ts (eixos, times, rótulos e tons de status, escala 1–5), navigation.ts
+                    domínios: auth, dashboard, eixos, projetos, requisicoes, inventario, avaliacao
+config/             options.ts (eixos, times, rótulos e tons, escala 1–5), requests.ts (tipos de requisição, ciclos de
+                    andamento, salas, armários, categorias), navigation.ts
 lib/                api/ (dados por domínio, index.ts reexporta), access.ts (permissões), session.ts (membro atual),
-                    db.ts (banco em memória), mock-data.ts, validation.ts (zod compartilhado), form.ts (hook client), cn.ts, format.ts
+                    db.ts (banco em memória, versionado), mock-data.ts, validation.ts (zod compartilhado), form.ts (hook client),
+                    deadlines.ts (requisições → linhas de prazo), cn.ts, format.ts
 types/              tipos de domínio
 ```
 
@@ -55,7 +58,11 @@ types/              tipos de domínio
   Sempre trate `eixo`/`time` como possivelmente `null`; para exibir o vínculo use `describeMember()` ("Mídias · Inovação", "Coordenação · Inovação", "Diretoria") ou `memberRoleOrTime()`.
 - Avaliação Cruzada **não** é restrita por eixo (colegas de todos os eixos, inclusive coordenação e diretoria, menos o próprio membro).
 - Coordenação do próprio eixo (`canManageEixo`): CRUD de projetos, tarefas e componentes alocados; aba Requisições (aprovar/recusar as dos membros); avaliações cruzadas detalhadas de cada membro do eixo. Membro: vê projetos do eixo, muda o status só das próprias tarefas, faz requisições e só vincula projetos aos quais é afiliado.
-- Requisições têm `reviewer`: membro → `"coordenacao"` (fila do eixo); coordenador → `"diretoria"` (fila em `/diretoria`; pode vincular qualquer projeto do próprio eixo). A diretoria não faz requisições. Use `requestReviewerFor()` e `canResolveRequest()` — nunca decida o destino na tela.
+- Requisições têm `reviewer`: membro → `"coordenacao"` (Painel da Coordenação do eixo); coordenador → `"diretoria"` (`/diretoria`; só título, explicação e justificativa — `kind: "pedido"`). A diretoria não faz requisições, mas **age no Painel da Coordenação de qualquer eixo** (`canUseCoordinationPanel`). Use `requestReviewerFor()` e `canResolveRequest()` — nunca decida o destino na tela.
+- Tipos de requisição de membro (`ResourceRequest` é uma união por `kind`): `componente` (do inventário), `reuniao` (data, horário, sala), `autorizacao` (início, expiração), `verba` (valor, uso, prazo de confecção), `compra` (componente não disponível: nome, quantidade, prazo, valor estimado), `outros` (explicação, data opcional). Todos têm justificativa e projeto opcional.
+- Depois de aprovada, a requisição ganha `progress`, com ciclo por tipo em `config/requests.ts` (`INITIAL_PROGRESS`, `NEXT_PROGRESS`, `FINAL_PROGRESS`). Reunião passada vira "realizada" e autorização vencida vira "expirada" por `effectiveProgress()` — não grave isso, calcule. Compra → "feito" só por `completePurchase` (pede categoria, armário, dono, quantidade, valor pago; cria o item no inventário em uso e liga ao projeto ou empresta a quem pediu).
+- Compras/verbas/reuniões/outros em andamento com prazo entram em "Prazos e tarefas" (de quem pediu; compras também da coordenação do eixo) e, se vinculadas, nas tarefas do projeto — via `getRequestDeadlines`/`getProjectPurchases` + `requestsToDeadlineRows` + `DeadlineRows`.
+- Inventário: item tem `ownerEixo` (null = sem propriedade), `cabinet` e `category` (listas fixas em `config/requests.ts`). Todos veem tudo. Em uso = alocado em projetos + empréstimos (`loans`); nunca calcule disponibilidade fora de `lib/api/inventory.ts`. Diretoria edita qualquer item; coordenação edita os do próprio eixo e os sem propriedade (`canEditInventoryItem`); time Processos **propõe** (`InventoryProposal`), e a proposta é aprovada pela coordenação do eixo dono — sem dono, qualquer coordenação — ou pela diretoria (`canApproveInventoryProposal`). Propostas aparecem no Painel da Coordenação.
 - Toda regra de permissão mora em `lib/access.ts` (funções puras, testadas em `access.test.ts`). Não espalhe `role === …` pelas telas; crie/ajuste uma função ali.
 - O filtro acontece **no servidor, na camada de dados**: funções de `lib/api` que dependem de permissão recebem o membro; leituras devolvem `null`/lista filtrada e escritas devolvem `ActionResult` com erro. Nunca confie em parâmetro de URL nem esconda dados só na interface. Esconder um botão é só UX — a checagem real está em `lib/api`.
 - Página que recebe um recurso sem permissão chama `forbidden()` (de `next/navigation`, habilitado por `experimental.authInterrupts`), que renderiza `app/(app)/forbidden.tsx`. Recurso inexistente → `notFound()`. Sempre `await` a função que pode chamar `forbidden()` e não a envolva em `try/catch`.
@@ -97,6 +104,8 @@ Nunca use hex solto em componente; se faltar cor, crie token.
 | `ConfirmButton` | ação destrutiva em dois passos |
 | `SectionTabs` | abas de seção por rota (client; ativa pela URL; `exact` na "Visão geral"; `count` opcional) |
 | `PageHeader` (`components/layout`) | cabeçalho padrão das telas internas (eyebrow, título, ações) |
+| `DecisionForm` | aprovar/recusar com observação (obrigatória ao recusar); valores configuráveis |
+| `DeadlineRows` | linhas de prazo vindas de outras áreas (`DeadlineRow`) dentro de listas de tarefas |
 
 Variantes com `cva`; sempre aceite `className` e combine com `cn()`.
 

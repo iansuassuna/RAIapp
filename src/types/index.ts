@@ -97,16 +97,74 @@ export type Project = {
   components: ProjectComponent[];
 };
 
-/* ---------- Inventário e requisições ---------- */
+/* ---------- Inventário ---------- */
 
-/** Componente de propriedade do RAITec. */
-export type InventoryItem = { id: string; name: string; category: string; total: number };
-export type InventoryAvailability = InventoryItem & { available: number };
+/** Componente de propriedade do RAITec. `ownerEixo: null` = sem propriedade (de todos). */
+export type InventoryItem = {
+  id: string;
+  name: string;
+  category: string;
+  cabinet: string;
+  ownerEixo: Eixo | null;
+  total: number;
+};
+export type InventoryAvailability = InventoryItem & { inUse: number; available: number };
 
-export type RequestKind = "componente" | "recurso";
+/** Componente emprestado a um membro (uso fora de projeto). */
+export type Loan = {
+  id: string;
+  componentId: string;
+  memberId: string;
+  quantity: number;
+  requestId: string | null;
+  returnedAt: string | null;
+};
+
+export type InventoryItemInput = Omit<InventoryItem, "id">;
+
+/** Alteração de inventário proposta pelo time Processos — só vale depois de aprovada. */
+export type InventoryProposal = {
+  id: string;
+  proposerId: string;
+  action: "criar" | "editar" | "excluir";
+  itemId: string | null;
+  data: InventoryItemInput | null;
+  status: "pendente" | "aplicada" | "recusada";
+  createdAt: string;
+  resolution?: { by: string; note: string; at: string };
+};
+
+/* ---------- Requisições ---------- */
+
+/** Tipo da requisição. "pedido" = requisição de coordenador à diretoria (título/explicação/justificativa). */
+export type RequestKind = "componente" | "reuniao" | "autorizacao" | "verba" | "compra" | "outros" | "pedido";
 /** Quem analisa a requisição: membros pedem à coordenação do eixo; coordenadores pedem à diretoria. */
 export type RequestReviewer = "coordenacao" | "diretoria";
 export type RequestStatus = "pendente" | "aprovada" | "recusada";
+
+/** Andamento depois da aprovação (o ciclo de cada tipo está em `config/requests.ts`). */
+export type RequestProgress =
+  | "em-uso"
+  | "devolvido"
+  | "agendada"
+  | "realizada"
+  | "ativa"
+  | "expirada"
+  | "revogada"
+  | "aguardando-liberacao"
+  | "liberada"
+  | "prestacao-entregue"
+  | "aguardando"
+  | "feito";
+
+export type RequestDetails =
+  | { kind: "componente"; componentId: string; quantity: number }
+  | { kind: "reuniao"; date: string; time: string; room: string }
+  | { kind: "autorizacao"; startDate: string; endDate: string }
+  | { kind: "verba"; amount: number; usage: string; deadline: string }
+  | { kind: "compra"; itemName: string; quantity: number; deadline: string; estimatedValue: number }
+  | { kind: "outros"; explanation: string; date: string | null }
+  | { kind: "pedido"; title: string; explanation: string };
 
 export type ResourceRequest = {
   id: string;
@@ -115,16 +173,29 @@ export type ResourceRequest = {
   eixo: Eixo;
   reviewer: RequestReviewer;
   projectId: string | null;
-  kind: RequestKind;
-  /** Só para kind = "componente". */
-  componentId: string | null;
-  quantity: number;
-  /** Para kind = "recurso": o que está sendo pedido (sala, impressora 3D, verba…). */
-  description: string;
   justification: string;
   status: RequestStatus;
+  /** Preenchido na aprovação; muda conforme o ciclo do tipo. */
+  progress: RequestProgress | null;
   createdAt: string; // ISO
   resolution?: { by: string; note: string; at: string };
+  /** Histórico de mudanças de andamento. */
+  history: { progress: RequestProgress; by: string; at: string }[];
+  /** Compra concluída: item criado no inventário e valor pago. */
+  purchase?: { itemId: string; paidValue: number; at: string };
+} & RequestDetails;
+
+/** Prazo vindo de uma requisição (compra, verba, reunião, outros) para "Prazos e tarefas". */
+export type RequestDeadline = {
+  requestId: string;
+  title: string;
+  kind: RequestKind;
+  deadline: string;
+  progress: RequestProgress;
+  projectId: string | null;
+  eixo: Eixo;
+  /** Quem pediu (para a lista da coordenação). */
+  memberId: string;
 };
 
 /* ---------- Avaliação Cruzada ---------- */
@@ -161,4 +232,16 @@ export type EvaluationCycle = {
 /* ---------- Ações ---------- */
 
 /** Resultado padrão de mutações (Server Actions e funções de escrita de `lib/api`). */
-export type ActionResult = { ok: true; id?: string } | { ok: false; error: string; fieldErrors?: Record<string, string> };
+export type ActionResult =
+  | { ok: true; id?: string; /** true = virou proposta aguardando aprovação (time Processos). */ pending?: boolean }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+/** Linha de prazo vinda de outra área (ex.: compra aprovada) para listas de tarefas. Só exibição. */
+export type DeadlineRow = {
+  id: string;
+  title: string;
+  subtitle: string;
+  deadline: string;
+  badge: { label: string; tone: "brand" | "warning" | "success" | "danger" | "accent" };
+  href?: string;
+};
