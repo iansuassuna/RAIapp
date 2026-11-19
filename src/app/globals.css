@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   RAIapp — Design Tokens
+   Fonte única da verdade para cores, tipografia, raios e sombras.
+   Tailwind v4 gera utilitários automaticamente a partir de @theme:
+   --color-brand-900  → bg-brand-900, text-brand-900, border-brand-900...
+   --font-display     → font-display
+   --radius-field     → rounded-field
+   --shadow-card      → shadow-card
+   ========================================================================== */
+
+@theme {
+  /* ---------- Cores de marca (azul-noite do logo) ---------- */
+  --color-brand-50: #eef0ff;
+  --color-brand-100: #dfe2ff;
+  --color-brand-200: #c2c7fb;
+  --color-brand-300: #9aa1ef;
+  --color-brand-400: #6b72d6;
+  --color-brand-500: #444bb3;
+  --color-brand-600: #2c3290;
+  --color-brand-700: #1b206e;
+  --color-brand-800: #10144f;
+  --color-brand-900: #070a35;
+  --color-brand-950: #03041f;
+
+  /* ---------- Acento (ciano dos circuitos) ---------- */
+  --color-accent-50: #ecfefd;
+  --color-accent-100: #cffcf9;
+  --color-accent-200: #a2f6f2;
+  --color-accent-300: #66ebe7;
+  --color-accent-400: #27d6d3;
+  --color-accent-500: #0dbfbe;
+  --color-accent-600: #0a999b;
+  --color-accent-700: #0f7a7d;
+
+  /* ---------- Destaque numérico (violeta) ---------- */
+  --color-iris-50: #f3f0ff;
+  --color-iris-100: #e8e2ff;
+  --color-iris-500: #6c4cf5;
+  --color-iris-600: #5a35e0;
+  --color-iris-700: #4a28bd;
+
+  /* ---------- Superfícies e texto ---------- */
+  --color-canvas: #f3f4f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eceef6;
+  --color-line: #e2e5f0;
+  --color-ink: #0c0e2b;
+  --color-ink-muted: #5d6280;
+  --color-ink-subtle: #9095b0;
+
+  /* ---------- Semânticas ---------- */
+  --color-success-50: #e9fbf1;
+  --color-success-500: #16a865;
+  --color-success-700: #0d7a48;
+  --color-warning-50: #fff7e6;
+  --color-warning-500: #e59a0b;
+  --color-warning-700: #a86a00;
+  --color-danger-50: #fff0f0;
+  --color-danger-500: #e5484d;
+  --color-danger-700: #b4232a;
+
+  /* ---------- Tipografia ---------- */
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora Variable", "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  /* ---------- Raios ---------- */
+  --radius-field: 0.875rem;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+
+  /* ---------- Sombras ---------- */
+  --shadow-card: 0 1px 2px rgb(7 10 53 / 0.04), 0 8px 24px -12px rgb(7 10 53 / 0.12);
+  --shadow-raised: 0 2px 4px rgb(7 10 53 / 0.06), 0 20px 40px -20px rgb(7 10 53 / 0.35);
+  --shadow-glow: 0 0 0 1px rgb(13 191 190 / 0.25), 0 12px 32px -8px rgb(13 191 190 / 0.45);
+
+  /* ---------- Animações ---------- */
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent-500;
+  }
+
+  ::selection {
+    @apply bg-accent-200 text-brand-900;
+  }
+}
+
+/* Utilitários de projeto — padrões visuais reutilizáveis */
+@utility bg-circuit {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.08) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+@utility text-gradient-accent {
+  background-image: linear-gradient(90deg, var(--color-accent-300), var(--color-accent-500));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
