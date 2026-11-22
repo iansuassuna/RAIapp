@@ -21,6 +21,13 @@ paths:
   - Impossibilidade de remover o último membro com papel `diretoria`.
   - Invariantes de vínculo (`eixo`/`time`) válidas e limpeza de vínculos de projetos/tarefas ao mudar de eixo.
 
+## Verificação de E-mail e Redefinição de Senha
+- `requireEmailVerification` global fica **desligado** (contas antigas não verificaram). A exigência vale só para `user.verificationRequired = true`, gravado pelo hook de criação em todo cadastro novo (`input: false`, nunca vem do cliente).
+- Use sempre `getSessionState()` / `getSessionMember()` / `getCurrentMember()` de `src/lib/session.ts`: conta pendente (`isPendingEmailVerification`) **não** é tratada como membro — páginas redirecionam para `/verificar-email` e Server Actions negam.
+- Respostas de "esqueci a senha" e "reenviar verificação" são **sempre neutras** (não revelam se o e-mail tem conta).
+- Redefinir senha revoga todas as sessões (`revokeSessionsOnPasswordReset: true`).
+- E-mails só via `src/lib/mail.ts` (`sendMailSafely` nos fluxos de auth); nunca logue `RESEND_API_KEY`. Testes usam sempre o driver `memory`.
+
 ## Defesa em Profundidade (Next.js 16)
 1. **Camada 1 — `src/proxy.ts`** (substitui `middleware.ts` no Next.js 16):
    - Verificação otimista de presença de cookie via `getSessionCookie(request)` (`better-auth/cookies`).

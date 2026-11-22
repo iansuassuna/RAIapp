@@ -13,6 +13,8 @@ export const user = pgTable(
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").notNull().default(false),
+    /** `true` só para contas criadas pelo cadastro público após a Fase 1: precisam verificar o e-mail para entrar. */
+    verificationRequired: boolean("verification_required").notNull().default(false),
     image: text("image"),
     role: roleEnum("role").notNull().default("membro"),
     eixo: eixoEnum("eixo"),

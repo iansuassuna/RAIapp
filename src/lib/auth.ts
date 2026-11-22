@@ -7,6 +7,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import type { Role } from "@/types";
 import { devQuickSwitchPlugin } from "./dev-auth";
+import { sendMailSafely } from "./mail";
+import { resetPasswordEmail, verificationEmail } from "./mail-templates";
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET ?? "raiapp-dev-secret-fallback-min-32-chars!!",
@@ -18,7 +20,22 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    // Global desligado de propósito: contas antigas não verificaram e-mail. A exigência vale só para contas
+    // com `verificationRequired = true` (cadastros novos) e é aplicada em `src/lib/session.ts`.
     requireEmailVerification: false,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendMailSafely(resetPasswordEmail(user, url));
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendMailSafely(verificationEmail(user, url));
+    },
   },
   user: {
     additionalFields: {
@@ -44,6 +61,12 @@ export const auth = betterAuth({
         defaultValue: 0,
         input: false,
       },
+      verificationRequired: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
     },
   },
   databaseHooks: {
@@ -51,6 +74,7 @@ export const auth = betterAuth({
       create: {
         before: async (newUser) => {
           // Mesmas regras do formulário `/cadastro`, aplicadas também a chamadas diretas a `/api/auth/sign-up/email`.
+          // Toda conta criada por aqui (cadastro novo) precisa verificar o e-mail antes de usar o app.
           const name = typeof newUser.name === "string" ? newUser.name.trim() : "";
           if (name.length < 3) invalidSignUp("Informe seu nome completo (mínimo de 3 caracteres).");
 
@@ -59,13 +83,31 @@ export const auth = betterAuth({
             if (!isEixo(newUser.eixo) || !isTime(newUser.time)) {
               invalidSignUp("Membros precisam selecionar eixo e time válidos.");
             }
-            return { data: { ...newUser, name, role: "membro", eixo: newUser.eixo, time: newUser.time } };
+            return {
+              data: {
+                ...newUser,
+                name,
+                verificationRequired: true,
+                role: "membro",
+                eixo: newUser.eixo,
+                time: newUser.time,
+              },
+            };
           }
           if (role === "coordenador") {
             if (!isEixo(newUser.eixo)) invalidSignUp("Coordenadores precisam informar um eixo válido.");
-            return { data: { ...newUser, name, role: "coordenador", eixo: newUser.eixo, time: null } };
+            return {
+              data: {
+                ...newUser,
+                name,
+                verificationRequired: true,
+                role: "coordenador",
+                eixo: newUser.eixo,
+                time: null,
+              },
+            };
           }
-          return { data: { ...newUser, name, role: "diretoria", eixo: null, time: null } };
+          return { data: { ...newUser, name, verificationRequired: true, role: "diretoria", eixo: null, time: null } };
         },
       },
     },

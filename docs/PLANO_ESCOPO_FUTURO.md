@@ -74,6 +74,8 @@ Cada fase segue o checklist do `code-quality.md` (lint, typecheck, test, build) 
 
 ### Fase 1 — Verificação de e-mail e "Esqueceu sua senha?"
 
+> ✅ **Concluída em 22/11/2026.** Rotas `/verificar-email`, `/esqueci-senha` e `/redefinir-senha`; mailer `src/lib/mail.ts` (resend/console/memory) + `mail-templates.ts`; migration `0001_email_verification`; bloqueio de contas pendentes em `src/lib/session.ts` (`getSessionState`) com regra pura `isPendingEmailVerification` em `access.ts`. Testes: `src/lib/auth-flows.test.ts` (10) e `src/lib/mail.test.ts` (6). Pendente fora do código: verificar o domínio no Resend e configurar `RESEND_API_KEY`/`MAIL_FROM` em produção.
+
 > Pré-requisito externo: conta no Resend com o domínio de envio verificado (registros DNS SPF/DKIM) e a `RESEND_API_KEY` de produção configurada no ambiente de deploy.
 
 **Infra (decisão: Resend)**
