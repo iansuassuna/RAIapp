@@ -28,8 +28,8 @@ export function LogoMark({ className, tone = "dark" }: LogoMarkProps) {
         d="M4 82 Q4 76 10 76 H58 Q66 76 66 84 V172 Q66 182 58 178 L52 175 Q47 172 47 166 V100 Q47 96 43 96 H10 Q4 96 4 90 Z"
         fill={solid}
       />
-      {traces.map(({ x, yTop, yTurn, xEnd }, i) => (
-        <g key={i}>
+      {traces.map(({ x, yTop, yTurn, xEnd }) => (
+        <g key={`${x}-${yTop}`}>
           <path
             d={`M${x} ${yTop} V${yTurn - 4} Q${x} ${yTurn} ${x + 4} ${yTurn} H${xEnd}`}
             fill="none"

@@ -1,4 +1,4 @@
-import { ArrowUpRight, BookOpen, Cpu, GraduationCap, MapPin, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, BookOpen, Cpu, GraduationCap, type LucideIcon, MapPin } from "lucide-react";
 import Link from "next/link";
 import { Badge, Card, SectionTitle } from "@/components/ui";
 import { ACTIVITY_STATUS_LABEL, ACTIVITY_STATUS_TONE, ACTIVITY_TYPE_LABEL } from "@/config/options";
@@ -17,7 +17,10 @@ export function RecentActivities({ activities }: { activities: Activity[] }) {
     <section aria-labelledby="atividades" className="space-y-3">
       <div className="flex items-center justify-between">
         <SectionTitle id="atividades">Atividades recentes</SectionTitle>
-        <Link href="#" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-accent-600">
+        <Link
+          href="#"
+          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-accent-600"
+        >
           Ver todas <ArrowUpRight className="size-4" />
         </Link>
       </div>
@@ -31,7 +34,10 @@ export function RecentActivities({ activities }: { activities: Activity[] }) {
               const Icon = typeIcon[a.type];
               return (
                 <li key={a.id}>
-                  <Link href="#" className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-muted/70">
+                  <Link
+                    href="#"
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 transition hover:bg-surface-muted/70"
+                  >
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
                       <Icon className="size-[18px]" />
                     </span>

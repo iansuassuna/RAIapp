@@ -23,7 +23,10 @@ export function ItemUsage({ projects, loans, memberNames }: Props) {
             {projects.map((p) => (
               <li key={p.projectId} className="flex items-center gap-3 px-3 py-3">
                 <FolderKanban className="size-4 text-ink-subtle" aria-hidden />
-                <Link href={`/eixos/${p.eixo}/projetos/${p.projectId}`} className="flex-1 text-sm font-semibold text-brand-700 hover:text-accent-600 hover:underline">
+                <Link
+                  href={`/eixos/${p.eixo}/projetos/${p.projectId}`}
+                  className="flex-1 text-sm font-semibold text-brand-700 hover:text-accent-600 hover:underline"
+                >
                   {p.name}
                 </Link>
                 <span className="font-display text-sm font-bold text-iris-600">×{p.quantity}</span>

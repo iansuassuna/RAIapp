@@ -1,34 +1,115 @@
 import { describe, expect, test } from "bun:test";
-import { canViewEixo, getAccessibleEixos } from "./access";
+import {
+  assignableOwners,
+  canApproveInventoryProposal,
+  canEditInventoryItem,
+  canManageEixo,
+  canManageMemberRoles,
+  canProposeInventoryChange,
+  canRequestForProject,
+  canResolveRequest,
+  canReviewDirectorRequests,
+  canUpdateTaskStatus,
+  canUseCoordinationPanel,
+  canViewEixo,
+  canViewMemberEvaluations,
+  getAccessibleEixos,
+  requestReviewerFor,
+} from "./access";
+
+const membroMidias = { id: "m2", role: "membro", eixo: "inovacao", time: "midias" } as const;
+const membroProcessos = { id: "m3", role: "membro", eixo: "inovacao", time: "processos" } as const;
+const coordInovacao = { id: "m1", role: "coordenador", eixo: "inovacao", time: null } as const;
+const coordSaude = { id: "m8", role: "coordenador", eixo: "tecnologias-saude", time: null } as const;
+const diretoria = { id: "d1", role: "diretoria", eixo: null, time: null } as const;
 
 describe("acesso por eixo", () => {
   test("membro vê só o próprio eixo", () => {
-    const membro = { role: "membro", eixo: "inovacao" } as const;
-    expect(canViewEixo(membro, "inovacao")).toBe(true);
-    expect(canViewEixo(membro, "tecnico-sustentavel")).toBe(false);
-    expect(canViewEixo(membro, "tecnologias-saude")).toBe(false);
-    expect(getAccessibleEixos(membro)).toEqual(["inovacao"]);
+    expect(canViewEixo(membroMidias, "inovacao")).toBe(true);
+    expect(canViewEixo(membroMidias, "tecnico-sustentavel")).toBe(false);
+    expect(canViewEixo(membroMidias, "tecnologias-saude")).toBe(false);
+    expect(getAccessibleEixos(membroMidias)).toEqual(["inovacao"]);
   });
 
   test("coordenador vê só o próprio eixo", () => {
-    const coordenador = { role: "coordenador", eixo: "tecnologias-saude" } as const;
-    expect(canViewEixo(coordenador, "tecnologias-saude")).toBe(true);
-    expect(canViewEixo(coordenador, "inovacao")).toBe(false);
-    expect(getAccessibleEixos(coordenador)).toEqual(["tecnologias-saude"]);
+    expect(canViewEixo(coordSaude, "tecnologias-saude")).toBe(true);
+    expect(canViewEixo(coordSaude, "inovacao")).toBe(false);
+    expect(getAccessibleEixos(coordSaude)).toEqual(["tecnologias-saude"]);
   });
 
   test("diretoria vê todos os eixos", () => {
-    const diretoria = { role: "diretoria", eixo: "inovacao" } as const;
     expect(getAccessibleEixos(diretoria)).toEqual(["inovacao", "tecnico-sustentavel", "tecnologias-saude"]);
   });
 });
 
-describe("coordenação", () => {
-  test("só o coordenador do próprio eixo gerencia", async () => {
-    const { canManageEixo } = await import("./access");
-    expect(canManageEixo({ role: "coordenador", eixo: "inovacao" }, "inovacao")).toBe(true);
-    expect(canManageEixo({ role: "coordenador", eixo: "inovacao" }, "tecnologias-saude")).toBe(false);
-    expect(canManageEixo({ role: "diretoria", eixo: "inovacao" }, "inovacao")).toBe(false);
-    expect(canManageEixo({ role: "membro", eixo: "inovacao" }, "inovacao")).toBe(false);
+describe("coordenação e diretoria", () => {
+  test("só o coordenador do próprio eixo gerencia", () => {
+    expect(canManageEixo(coordInovacao, "inovacao")).toBe(true);
+    expect(canManageEixo(coordInovacao, "tecnologias-saude")).toBe(false);
+    expect(canManageEixo(diretoria, "inovacao")).toBe(false);
+    expect(canManageEixo(membroMidias, "inovacao")).toBe(false);
+  });
+
+  test("painel da coordenação: coordenação do eixo ou diretoria", () => {
+    expect(canUseCoordinationPanel(coordInovacao, "inovacao")).toBe(true);
+    expect(canUseCoordinationPanel(coordSaude, "inovacao")).toBe(false);
+    expect(canUseCoordinationPanel(diretoria, "inovacao")).toBe(true);
+    expect(canUseCoordinationPanel(membroMidias, "inovacao")).toBe(false);
+  });
+
+  test("gestão de papéis e fila da diretoria são exclusivas da diretoria", () => {
+    expect(canReviewDirectorRequests(diretoria)).toBe(true);
+    expect(canReviewDirectorRequests(coordInovacao)).toBe(false);
+    expect(canManageMemberRoles(diretoria)).toBe(true);
+    expect(canManageMemberRoles(coordInovacao)).toBe(false);
+    expect(canManageMemberRoles(membroMidias)).toBe(false);
+  });
+});
+
+describe("requisições, tarefas e avaliações", () => {
+  test("destino das requisições por papel", () => {
+    expect(requestReviewerFor(membroMidias)).toBe("coordenacao");
+    expect(requestReviewerFor(coordInovacao)).toBe("diretoria");
+    expect(requestReviewerFor(diretoria)).toBeNull();
+  });
+
+  test("quem resolve requisições", () => {
+    expect(canResolveRequest(coordInovacao, { eixo: "inovacao", reviewer: "coordenacao" })).toBe(true);
+    expect(canResolveRequest(coordSaude, { eixo: "inovacao", reviewer: "coordenacao" })).toBe(false);
+    expect(canResolveRequest(diretoria, { eixo: "inovacao", reviewer: "coordenacao" })).toBe(true);
+    expect(canResolveRequest(coordInovacao, { eixo: "inovacao", reviewer: "diretoria" })).toBe(false);
+    expect(canResolveRequest(diretoria, { eixo: "inovacao", reviewer: "diretoria" })).toBe(true);
+  });
+
+  test("tarefas e projetos vinculáveis", () => {
+    const project = { eixo: "inovacao" as const, memberIds: ["m1", "m2"] };
+    expect(canRequestForProject(membroMidias, project)).toBe(true);
+    expect(canRequestForProject(membroProcessos, project)).toBe(false);
+    expect(canRequestForProject(coordInovacao, project)).toBe(true);
+    expect(canUpdateTaskStatus(membroMidias, project, { assigneeId: "m2" })).toBe(true);
+    expect(canUpdateTaskStatus(membroMidias, project, { assigneeId: "m3" })).toBe(false);
+    expect(canUpdateTaskStatus(coordInovacao, project, { assigneeId: "m3" })).toBe(true);
+  });
+
+  test("avaliações detalhadas: só coordenação do eixo do avaliado", () => {
+    expect(canViewMemberEvaluations(coordInovacao, membroMidias)).toBe(true);
+    expect(canViewMemberEvaluations(coordSaude, membroMidias)).toBe(false);
+    expect(canViewMemberEvaluations(diretoria, membroMidias)).toBe(false);
+    expect(canViewMemberEvaluations(coordInovacao, diretoria)).toBe(false);
+  });
+});
+
+describe("inventário", () => {
+  test("edição direta, propostas do time Processos e aprovação", () => {
+    expect(canEditInventoryItem(diretoria, { ownerEixo: "inovacao" })).toBe(true);
+    expect(canEditInventoryItem(coordInovacao, { ownerEixo: "inovacao" })).toBe(true);
+    expect(canEditInventoryItem(coordInovacao, { ownerEixo: null })).toBe(true);
+    expect(canEditInventoryItem(coordInovacao, { ownerEixo: "tecnologias-saude" })).toBe(false);
+    expect(canProposeInventoryChange(membroProcessos)).toBe(true);
+    expect(canProposeInventoryChange(membroMidias)).toBe(false);
+    expect(canApproveInventoryProposal(coordSaude, null)).toBe(true);
+    expect(canApproveInventoryProposal(coordSaude, "inovacao")).toBe(false);
+    expect(assignableOwners(coordInovacao)).toEqual([null, "inovacao"]);
+    expect(assignableOwners(membroProcessos)).toEqual([null, "inovacao", "tecnico-sustentavel", "tecnologias-saude"]);
   });
 });

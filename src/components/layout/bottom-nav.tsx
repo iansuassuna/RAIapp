@@ -28,7 +28,9 @@ export function BottomNav({ role }: { role: Role }) {
                   active ? "text-brand-900" : "text-ink-subtle hover:text-brand-700",
                 )}
               >
-                <span className={cn("grid h-7 w-12 place-items-center rounded-full transition", active && "bg-accent-100")}>
+                <span
+                  className={cn("grid h-7 w-12 place-items-center rounded-full transition", active && "bg-accent-100")}
+                >
                   <Icon className="size-5" />
                 </span>
                 {label}

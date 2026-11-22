@@ -66,7 +66,10 @@ export default async function InventoryItemPage({ params }: Props) {
           </div>
           {(edits || proposes) && (
             <div className="flex flex-wrap items-start justify-end gap-2 border-t border-line pt-4">
-              <Link href={`/inventario/${item.id}/editar`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              <Link
+                href={`/inventario/${item.id}/editar`}
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
+              >
                 {proposes ? <Send className="size-4" aria-hidden /> : <Pencil className="size-4" aria-hidden />}
                 {proposes ? "Propor alteração" : "Editar"}
               </Link>

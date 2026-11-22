@@ -15,7 +15,10 @@ type Props = SelectHTMLAttributes<HTMLSelectElement> & {
 };
 
 export const Select = forwardRef<HTMLSelectElement, Props>(
-  ({ id, label, icon, placeholder, options, error, className, defaultValue = "", placeholderSelectable, ...props }, ref) => (
+  (
+    { id, label, icon, placeholder, options, error, className, defaultValue = "", placeholderSelectable, ...props },
+    ref,
+  ) => (
     <FieldShell
       id={id}
       label={label}

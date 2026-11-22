@@ -1,20 +1,57 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { mockMembers } from "./mock-data";
+import { asc } from "drizzle-orm";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { cache } from "react";
+import { db } from "@/db";
+import { user } from "@/db/schema";
+import { toMember } from "@/lib/api/shared";
+import { auth } from "@/lib/auth";
+import { isDevQuickSwitchEnabled } from "@/lib/dev-auth";
+import type { Member } from "@/types";
 
 /**
- * Sessão TEMPORÁRIA: ainda não há autenticação. O membro "logado" vem de um cookie
- * definido pelo seletor de membro de teste no header (DevMemberSwitcher).
- * TODO: substituir pela sessão real quando houver login/backend — as regras de `lib/access.ts` não mudam.
+ * Retorna o membro autenticado pela sessão real do Better Auth, ou `null` se anônimo.
+ * Deduplicado por requisição via `React.cache()`.
  */
-export const DEV_MEMBER_COOKIE = "raiapp-dev-member";
+export const getSessionMember = cache(async (): Promise<Member | null> => {
+  const current = await auth.api.getSession({ headers: await headers() });
+  if (!current?.user) return null;
+  return toMember({
+    id: current.user.id,
+    name: current.user.name,
+    email: current.user.email,
+    image: current.user.image,
+    role: String(current.user.role ?? "membro"),
+    eixo: current.user.eixo ? String(current.user.eixo) : null,
+    time: current.user.time ? String(current.user.time) : null,
+  });
+});
 
-export async function getCurrentMember() {
-  const id = (await cookies()).get(DEV_MEMBER_COOKIE)?.value;
-  return mockMembers.find((m) => m.id === id) ?? mockMembers[0]!;
+/** Exige sessão válida em rotas autenticadas de `(app)`. */
+export async function getCurrentMember(): Promise<Member> {
+  const member = await getSessionMember();
+  if (!member) redirect("/login");
+  return member;
 }
 
-/** Membros disponíveis no seletor de teste. */
-export async function getDevMembers() {
-  return mockMembers;
+/**
+ * Lista usuários reais do banco para o seletor rápido de dev.
+ * Retorna lista vazia se `DEV_QUICK_SWITCH` não estiver ativo ou em produção.
+ */
+export async function getDevQuickSwitchMembers(): Promise<Member[]> {
+  if (!isDevQuickSwitchEnabled()) return [];
+  const rows = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      eixo: user.eixo,
+      time: user.time,
+    })
+    .from(user)
+    .orderBy(asc(user.name));
+  return rows.map(toMember).filter((m): m is Member => m !== null);
 }

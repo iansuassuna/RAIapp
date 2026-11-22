@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { ConfirmButton } from "@/components/ui";
 import type { ActionResult } from "@/types";
 
-export function DeleteProjectButton({ action, redirectTo }: { action: () => Promise<ActionResult>; redirectTo: string }) {
+export function DeleteProjectButton({
+  action,
+  redirectTo,
+}: {
+  action: () => Promise<ActionResult>;
+  redirectTo: string;
+}) {
   const router = useRouter();
   return (
     <ConfirmButton

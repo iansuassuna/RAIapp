@@ -24,7 +24,9 @@ export default async function EixoMembersPage({ params }: { params: Promise<{ ei
           {members.length} {members.length === 1 ? "membro associado" : "membros associados"}
         </SectionTitle>
         <p className="text-xs text-ink-subtle">
-          {manages ? "Toque em um membro para ver as avaliações cruzadas detalhadas." : "Ordenados pela pontuação no ciclo."}
+          {manages
+            ? "Toque em um membro para ver as avaliações cruzadas detalhadas."
+            : "Ordenados pela pontuação no ciclo."}
         </p>
       </div>
       <EixoMembers members={members} evaluationsHref={manages ? `/eixos/${eixo}/membros` : undefined} />

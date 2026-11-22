@@ -37,7 +37,8 @@ export function EixoMembers({ members, evaluationsHref }: Props) {
                   )}
                 </span>
                 <span className="block text-xs text-ink-subtle">
-                  {m.time ? `${timeLabel(m.time)} · ` : ""}{m.score} pts
+                  {m.time ? `${timeLabel(m.time)} · ` : ""}
+                  {m.score} pts
                 </span>
               </span>
               <Badge tone={MEMBER_STANDING_TONE[m.standing]}>{MEMBER_STANDING_LABEL[m.standing]}</Badge>

@@ -145,6 +145,14 @@ export function isEixo(value: unknown): value is Eixo {
   return EIXOS.some((e) => e.value === value);
 }
 
+export function isTime(value: unknown): value is Time {
+  return TIMES.some((t) => t.value === value);
+}
+
+export function isRole(value: unknown): value is Role {
+  return value === "membro" || value === "coordenador" || value === "diretoria";
+}
+
 /** Opções de <select> para eixo proprietário ("sem" = sem propriedade). */
 export function ownerSelectOptions(owners: (Eixo | null)[]) {
   return owners.map((o) => ({ value: o ?? "sem", label: o ? eixoLabel(o) : "Sem propriedade" }));

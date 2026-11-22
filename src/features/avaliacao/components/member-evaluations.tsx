@@ -63,7 +63,9 @@ export function MemberEvaluations({ cycles }: { cycles: CycleReport[] }) {
                         <div className="flex items-center gap-3">
                           <Avatar decorative name={e.evaluatorName} className="size-9 text-xs ring-0" />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-semibold text-brand-950">{e.evaluatorName}</span>
+                            <span className="block truncate text-sm font-semibold text-brand-950">
+                              {e.evaluatorName}
+                            </span>
                             <span className="block text-xs text-ink-subtle">
                               {e.evaluatorContext} · {formatDateTime(e.submittedAt)}
                             </span>
@@ -72,7 +74,16 @@ export function MemberEvaluations({ cycles }: { cycles: CycleReport[] }) {
                         <ul className="flex flex-wrap gap-1.5" aria-label="Notas">
                           {EVALUATION_CRITERIA.map((c) => (
                             <li key={c.id}>
-                              <Badge tone={(e.ratings[c.id] ?? 0) >= 4 ? "success" : (e.ratings[c.id] ?? 0) >= 3 ? "brand" : "danger"} dot={false}>
+                              <Badge
+                                tone={
+                                  (e.ratings[c.id] ?? 0) >= 4
+                                    ? "success"
+                                    : (e.ratings[c.id] ?? 0) >= 3
+                                      ? "brand"
+                                      : "danger"
+                                }
+                                dot={false}
+                              >
                                 {c.label}: {e.ratings[c.id] ?? "–"}
                               </Badge>
                             </li>

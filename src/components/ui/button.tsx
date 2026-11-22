@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { LoaderCircle } from "lucide-react";
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/cn";
 
 export const buttonVariants = cva(
@@ -8,12 +8,9 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary:
-          "bg-brand-900 text-white shadow-raised hover:bg-brand-800 hover:shadow-glow",
-        accent:
-          "bg-accent-500 text-brand-950 hover:bg-accent-400 shadow-glow",
-        secondary:
-          "bg-surface text-brand-900 ring-1 ring-line hover:bg-surface-muted",
+        primary: "bg-brand-900 text-white shadow-raised hover:bg-brand-800 hover:shadow-glow",
+        accent: "bg-accent-500 text-brand-950 hover:bg-accent-400 shadow-glow",
+        secondary: "bg-surface text-brand-900 ring-1 ring-line hover:bg-surface-muted",
         ghost: "text-brand-700 hover:bg-brand-50",
         danger: "bg-danger-50 text-danger-700 ring-1 ring-danger-500/30 hover:bg-danger-500 hover:text-white",
         link: "h-auto px-0 text-brand-600 underline-offset-4 hover:text-accent-600 hover:underline",

@@ -1,8 +1,16 @@
-import { Banknote, Cpu, Ellipsis, KeyRound, Send, ShoppingCart, Users, type LucideIcon } from "lucide-react";
+import { Banknote, Cpu, Ellipsis, KeyRound, type LucideIcon, Send, ShoppingCart, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui";
 import { eixoLabel, REQUEST_STATUS_LABEL, REQUEST_STATUS_TONE } from "@/config/options";
-import { cabinetLabel, formatBRL, PROGRESS_LABEL, PROGRESS_TONE, REQUEST_KIND_LABEL, requestTitle, roomLabel } from "@/config/requests";
+import {
+  cabinetLabel,
+  formatBRL,
+  PROGRESS_LABEL,
+  PROGRESS_TONE,
+  REQUEST_KIND_LABEL,
+  requestTitle,
+  roomLabel,
+} from "@/config/requests";
 import { formatDateTime, formatShortDate } from "@/lib/format";
 import type { InventoryItem, RequestKind, ResourceRequest } from "@/types";
 
@@ -28,7 +36,9 @@ function details(r: ResourceRequest, lookups: RequestLookups): string | null {
   switch (r.kind) {
     case "componente": {
       const c = lookups.components[r.componentId];
-      return c ? `${cabinetLabel(c.cabinet)} · ${c.ownerEixo ? `do eixo ${eixoLabel(c.ownerEixo)}` : "sem propriedade"}` : null;
+      return c
+        ? `${cabinetLabel(c.cabinet)} · ${c.ownerEixo ? `do eixo ${eixoLabel(c.ownerEixo)}` : "sem propriedade"}`
+        : null;
     }
     case "reuniao":
       return `${formatShortDate(r.date)} às ${r.time} · ${roomLabel(r.room)}`;
@@ -82,8 +92,15 @@ export function RequestItem({ request: r, lookups, showRequester, children }: Pr
           <span className="block text-sm font-semibold text-brand-950">{title}</span>
           <span className="block text-xs text-ink-subtle">
             {REQUEST_KIND_LABEL[r.kind]}
-            {showRequester && requester && <> · {requester}{context && ` (${context})`}</>}
-            {r.projectId && lookups.projectNames[r.projectId] && <> · {lookups.projectNames[r.projectId]}</>} · {formatDateTime(r.createdAt)}
+            {showRequester && requester && (
+              <>
+                {" "}
+                · {requester}
+                {context && ` (${context})`}
+              </>
+            )}
+            {r.projectId && lookups.projectNames[r.projectId] && <> · {lookups.projectNames[r.projectId]}</>} ·{" "}
+            {formatDateTime(r.createdAt)}
           </span>
           {line && <span className="mt-0.5 block text-xs font-medium text-ink-muted">{line}</span>}
         </span>
@@ -102,7 +119,8 @@ export function RequestItem({ request: r, lookups, showRequester, children }: Pr
       </p>
       {r.resolution && (
         <p className="pl-1 text-xs text-ink-subtle">
-          {r.status === "aprovada" ? "Aprovada" : "Recusada"} por {lookups.memberNames[r.resolution.by] ?? "—"} em {formatDateTime(r.resolution.at)}
+          {r.status === "aprovada" ? "Aprovada" : "Recusada"} por {lookups.memberNames[r.resolution.by] ?? "—"} em{" "}
+          {formatDateTime(r.resolution.at)}
           {r.resolution.note && <>: “{r.resolution.note}”</>}
         </p>
       )}

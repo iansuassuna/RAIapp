@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: raiapp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-raiapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-raiapp}
+      POSTGRES_DB: ${POSTGRES_DB:-raiapp}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - raiapp_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-raiapp} -d ${POSTGRES_DB:-raiapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: raiapp-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-raiapp}:${POSTGRES_PASSWORD:-raiapp}@postgres:5432/${POSTGRES_DB:-raiapp}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production-min-32-chars!!}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      DEV_QUICK_SWITCH: "false"
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  raiapp_pgdata:

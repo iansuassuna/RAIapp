@@ -4,7 +4,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui";
 import { InventoryBrowser, ProposalList } from "@/features/inventario";
-import { canProposeInventoryChange, assignableOwners } from "@/lib/access";
+import { assignableOwners, canProposeInventoryChange } from "@/lib/access";
 import { getInventory, getLookups, getMyProposals } from "@/lib/api";
 import { getCurrentMember } from "@/lib/session";
 import type { InventoryItem } from "@/types";
@@ -37,7 +37,15 @@ export default async function InventoryPage() {
         }
       />
       <InventoryBrowser items={items} />
-      {proposes && <ProposalList title="Minhas propostas" proposals={proposals} items={byId} memberNames={memberNames} emptyText="Você ainda não propôs alterações" />}
+      {proposes && (
+        <ProposalList
+          title="Minhas propostas"
+          proposals={proposals}
+          items={byId}
+          memberNames={memberNames}
+          emptyText="Você ainda não propôs alterações"
+        />
+      )}
     </div>
   );
 }

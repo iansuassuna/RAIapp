@@ -1,24 +1,34 @@
 import { z } from "zod";
 import { EIXOS } from "@/config/options";
 import { CABINETS, COMPONENT_CATEGORIES, ROOMS } from "@/config/requests";
-import type { Eixo } from "@/types";
 import { isoDate, optionalId, optionalText } from "@/lib/validation";
+import type { Eixo } from "@/types";
 
 const justification = z
   .string({ error: "Explique para que você precisa." })
   .trim()
   .min(10, "Explique para que você precisa (mín. 10 caracteres).")
   .max(500, "Máximo de 500 caracteres.");
-const quantity = z.coerce.number({ error: "Informe a quantidade." }).int("Use um número inteiro.").min(1, "Mínimo 1.").max(50, "Máximo 50.");
+const quantity = z.coerce
+  .number({ error: "Informe a quantidade." })
+  .int("Use um número inteiro.")
+  .min(1, "Mínimo 1.")
+  .max(50, "Máximo 50.");
 const money = (msg: string) => z.coerce.number({ error: msg }).positive(msg).max(100_000, "Valor muito alto.");
-const text = (min: number, max: number, msg: string) => z.string({ error: msg }).trim().min(min, msg).max(max, `Máximo de ${max} caracteres.`);
+const text = (min: number, max: number, msg: string) =>
+  z.string({ error: msg }).trim().min(min, msg).max(max, `Máximo de ${max} caracteres.`);
 const common = { justification, projectId: optionalId };
 
 /** Requisição de membro: os campos dependem do tipo. */
 export const memberRequestSchema = z.discriminatedUnion(
   "kind",
   [
-    z.object({ kind: z.literal("componente"), componentId: z.string({ error: "Escolha um componente." }).min(1, "Escolha um componente."), quantity, ...common }),
+    z.object({
+      kind: z.literal("componente"),
+      componentId: z.string({ error: "Escolha um componente." }).min(1, "Escolha um componente."),
+      quantity,
+      ...common,
+    }),
     z.object({
       kind: z.literal("reuniao"),
       date: isoDate("Informe a data."),
@@ -27,8 +37,16 @@ export const memberRequestSchema = z.discriminatedUnion(
       ...common,
     }),
     z
-      .object({ kind: z.literal("autorizacao"), startDate: isoDate("Informe a data de início."), endDate: isoDate("Informe a data de expiração."), ...common })
-      .refine((d) => d.endDate >= d.startDate, { path: ["endDate"], message: "A expiração precisa ser depois do início." }),
+      .object({
+        kind: z.literal("autorizacao"),
+        startDate: isoDate("Informe a data de início."),
+        endDate: isoDate("Informe a data de expiração."),
+        ...common,
+      })
+      .refine((d) => d.endDate >= d.startDate, {
+        path: ["endDate"],
+        message: "A expiração precisa ser depois do início.",
+      }),
     z.object({
       kind: z.literal("verba"),
       amount: money("Informe o valor."),
@@ -72,7 +90,9 @@ export const resolveSchema = z
 /** Dados pedidos ao marcar uma compra como feita. */
 export const purchaseSchema = z.object({
   name: text(2, 80, "Informe o nome do componente."),
-  category: z.enum(COMPONENT_CATEGORIES.map((c) => c.value) as [string, ...string[]], { error: "Escolha a categoria." }),
+  category: z.enum(COMPONENT_CATEGORIES.map((c) => c.value) as [string, ...string[]], {
+    error: "Escolha a categoria.",
+  }),
   cabinet: z.enum(CABINETS.map((c) => c.value) as [string, ...string[]], { error: "Escolha o armário." }),
   ownerEixo: z.preprocess(
     (v) => (v === "" || v === "sem" ? null : v),

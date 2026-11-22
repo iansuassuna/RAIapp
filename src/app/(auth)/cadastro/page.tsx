@@ -12,7 +12,10 @@ export default function CadastroPage() {
       footer={
         <>
           Já tem conta?{" "}
-          <Link href="/login" className="font-semibold text-brand-700 underline-offset-4 hover:text-accent-600 hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-brand-700 underline-offset-4 hover:text-accent-600 hover:underline"
+          >
             Entrar
           </Link>
         </>

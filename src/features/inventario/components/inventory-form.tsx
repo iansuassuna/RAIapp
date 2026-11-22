@@ -22,19 +22,24 @@ type Props = {
 export function InventoryForm({ action, item, ownerOptions, cancelHref, asProposal }: Props) {
   const router = useRouter();
   const [sent, setSent] = useState(false);
-  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(inventoryItemSchema, async (data) => {
-    const result = await action(data);
-    if (result.ok) {
-      if (result.pending) setSent(true);
-      else router.push(`/inventario/${result.id ?? item!.id}`);
-    }
-    return result;
-  });
+  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(
+    inventoryItemSchema,
+    async (data) => {
+      const result = await action(data);
+      if (result.ok) {
+        if (result.pending) setSent(true);
+        else router.push(`/inventario/${result.id ?? item!.id}`);
+      }
+      return result;
+    },
+  );
 
   if (sent) {
     return (
       <div className="space-y-4">
-        <Alert tone="success">Proposta enviada. Ela aparece no Painel da Coordenação e só muda o inventário depois de aprovada.</Alert>
+        <Alert tone="success">
+          Proposta enviada. Ela aparece no Painel da Coordenação e só muda o inventário depois de aprovada.
+        </Alert>
         <Link href="/inventario" className={buttonVariants({ variant: "secondary" })}>
           Voltar ao inventário
         </Link>
@@ -45,13 +50,38 @@ export function InventoryForm({ action, item, ownerOptions, cancelHref, asPropos
   return (
     <form onSubmit={handleSubmit} onChange={handleChange} noValidate className="space-y-4">
       {asProposal && (
-        <Alert tone="info">Você é do time Processos: esta alteração vai como proposta para a coordenação ou a diretoria aprovar.</Alert>
+        <Alert tone="info">
+          Você é do time Processos: esta alteração vai como proposta para a coordenação ou a diretoria aprovar.
+        </Alert>
       )}
       {formError && <Alert tone="danger">{formError}</Alert>}
-      <Input id="name" label="Nome do componente" icon={Cpu} placeholder="Ex.: Sensor ultrassônico HC-SR04" defaultValue={item?.name} error={errors.name} />
+      <Input
+        id="name"
+        label="Nome do componente"
+        icon={Cpu}
+        placeholder="Ex.: Sensor ultrassônico HC-SR04"
+        defaultValue={item?.name}
+        error={errors.name}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select id="category" label="Categoria" icon={Tag} placeholder="Escolha..." options={COMPONENT_CATEGORIES} defaultValue={item?.category} error={errors.category} />
-        <Select id="cabinet" label="Armário" icon={Archive} placeholder="Escolha..." options={CABINETS} defaultValue={item?.cabinet} error={errors.cabinet} />
+        <Select
+          id="category"
+          label="Categoria"
+          icon={Tag}
+          placeholder="Escolha..."
+          options={COMPONENT_CATEGORIES}
+          defaultValue={item?.category}
+          error={errors.category}
+        />
+        <Select
+          id="cabinet"
+          label="Armário"
+          icon={Archive}
+          placeholder="Escolha..."
+          options={CABINETS}
+          defaultValue={item?.cabinet}
+          error={errors.cabinet}
+        />
         <Select
           id="ownerEixo"
           label="Eixo proprietário"
@@ -61,7 +91,15 @@ export function InventoryForm({ action, item, ownerOptions, cancelHref, asPropos
           defaultValue={item ? (item.ownerEixo ?? "sem") : undefined}
           error={errors.ownerEixo}
         />
-        <Input id="total" type="number" min={0} label="Quantidade total" icon={Hash} defaultValue={item?.total ?? 1} error={errors.total} />
+        <Input
+          id="total"
+          type="number"
+          min={0}
+          label="Quantidade total"
+          icon={Hash}
+          defaultValue={item?.total ?? 1}
+          error={errors.total}
+        />
       </div>
       <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
         <Link href={cancelHref} className={buttonVariants({ variant: "secondary", size: "lg" })}>

@@ -111,8 +111,7 @@
 
 /* Utilitários de projeto — padrões visuais reutilizáveis */
 @utility bg-circuit {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.08) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.08) 1px, transparent 0);
   background-size: 22px 22px;
 }
 

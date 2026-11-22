@@ -31,7 +31,9 @@ export function ProjectComponents({ project, inventory, canManage }: Props) {
                     <Cpu className="size-[18px]" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-brand-950">{item?.name ?? "Componente removido"}</span>
+                    <span className="block truncate text-sm font-semibold text-brand-950">
+                      {item?.name ?? "Componente removido"}
+                    </span>
                     <span className="block text-xs text-ink-subtle">{item?.category}</span>
                   </span>
                   <span className="font-display text-sm font-bold text-iris-600">×{c.quantity}</span>

@@ -41,7 +41,9 @@ export function ProjectCard({ project, showEixo }: { project: Project; showEixo?
         <Progress value={done} max={Math.max(total, 1)} tone="light" label={`Tarefas concluídas em ${project.name}`} />
       </div>
 
-      <p className={`mt-4 inline-flex items-center gap-1.5 text-xs font-medium ${late ? "text-danger-500" : "text-ink-muted"}`}>
+      <p
+        className={`mt-4 inline-flex items-center gap-1.5 text-xs font-medium ${late ? "text-danger-500" : "text-ink-muted"}`}
+      >
         <CalendarClock className="size-3.5" aria-hidden />
         Prazo {formatShortDate(project.deadline)}
         {late && " · atrasado"}

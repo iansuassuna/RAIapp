@@ -19,7 +19,10 @@ export default async function MemberAreaPage() {
   const requestRows = requestsToDeadlineRows(
     deadlines.map((d) => d.request),
     lookups,
-    { viewerId: member.id, href: (r) => (r.memberId === member.id ? "/minha-area/requisicoes" : `/eixos/${r.eixo}/painel`) },
+    {
+      viewerId: member.id,
+      href: (r) => (r.memberId === member.id ? "/minha-area/requisicoes" : `/eixos/${r.eixo}/painel`),
+    },
   );
 
   return (

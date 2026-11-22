@@ -26,7 +26,11 @@ export default async function MemberRequestsPage() {
       {reviewer === "diretoria" ? (
         <DirectorRequestForm action={createRequestAction} />
       ) : (
-        <RequestForm action={createRequestAction} inventory={inventory} projects={projects.map(({ id, name }) => ({ id, name }))} />
+        <RequestForm
+          action={createRequestAction}
+          inventory={inventory}
+          projects={projects.map(({ id, name }) => ({ id, name }))}
+        />
       )}
       <MyRequests requests={requests} lookups={lookups} />
     </div>

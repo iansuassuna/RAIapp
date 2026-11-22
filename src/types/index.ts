@@ -233,7 +233,7 @@ export type EvaluationCycle = {
 
 /** Resultado padrão de mutações (Server Actions e funções de escrita de `lib/api`). */
 export type ActionResult =
-  | { ok: true; id?: string; /** true = virou proposta aguardando aprovação (time Processos). */ pending?: boolean }
+  | { ok: true; id?: string /** true = virou proposta aguardando aprovação (time Processos). */; pending?: boolean }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 /** Linha de prazo vinda de outra área (ex.: compra aprovada) para listas de tarefas. Só exibição. */

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Info, XCircle, type LucideIcon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, type LucideIcon, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -17,7 +17,11 @@ export function Alert({ tone = "info", children, className }: Props) {
   return (
     <div
       role={tone === "danger" ? "alert" : "status"}
-      className={cn("animate-fade-up flex items-start gap-2 rounded-field px-4 py-3 text-sm font-medium", box, className)}
+      className={cn(
+        "animate-fade-up flex items-start gap-2 rounded-field px-4 py-3 text-sm font-medium",
+        box,
+        className,
+      )}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div>{children}</div>

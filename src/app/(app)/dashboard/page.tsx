@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { PerformanceCard, RecentActivities, TrajectoryGrid } from "@/features/dashboard";
 import { getDashboard } from "@/lib/api";
-import { getCurrentMember } from "@/lib/session";
 import { firstName } from "@/lib/format";
+import { getCurrentMember } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Início" };
 
 export default async function DashboardPage() {
-  const [member, { performance, trajectory, activities }] = await Promise.all([getCurrentMember(), getDashboard()]);
+  const member = await getCurrentMember();
+  const { performance, trajectory, activities } = await getDashboard(member);
 
   return (
     <div className="space-y-8 pt-7">
