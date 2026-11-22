@@ -68,10 +68,29 @@ export const auth = betterAuth({
           return { data: { ...newUser, name, role: "diretoria", eixo: null, time: null } };
         },
       },
+      update: {
+        before: async (data) => {
+          // `eixo`/`time` precisam de `input: true` para o cadastro, mas isso também os liberaria em
+          // `/api/auth/update-user`. Papel, eixo e time só mudam pela diretoria (`updateMemberRole`, direto no banco).
+          // O Better Auth pode enviar chaves com `undefined` (campo não alterado): só valores definidos contam.
+          for (const field of PROTECTED_USER_FIELDS) {
+            if (data[field] !== undefined) {
+              throw new APIError("BAD_REQUEST", {
+                message: "Papel, eixo e time só podem ser alterados pela diretoria.",
+                code: "INVALID_USER_UPDATE",
+              });
+            }
+          }
+          return { data };
+        },
+      },
     },
   },
   plugins: [devQuickSwitchPlugin(), nextCookies()],
 });
+
+/** Campos que nenhum endpoint do Better Auth pode alterar (somente `updateMemberRole`/seed, direto no banco). */
+const PROTECTED_USER_FIELDS = ["role", "eixo", "time", "score"] as const;
 
 /** Erro 400 legível para o cliente (em vez de `FAILED_TO_CREATE_USER` genérico + stack trace no log). */
 function invalidSignUp(message: string): never {
