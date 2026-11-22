@@ -28,6 +28,12 @@ paths:
 - Redefinir senha revoga todas as sessões (`revokeSessionsOnPasswordReset: true`).
 - E-mails só via `src/lib/mail.ts` (`sendMailSafely` nos fluxos de auth); nunca logue `RESEND_API_KEY`. Testes usam sempre o driver `memory`.
 
+## Campos Protegidos e Perfil
+- `eixo`/`time` têm `input: true` em `additionalFields` **só** por causa do cadastro. O hook `databaseHooks.user.update.before` em `src/lib/auth.ts` recusa (400) qualquer valor definido para `role`, `eixo`, `time`, `score` e `verificationRequired` em updates do Better Auth (ex.: `/api/auth/update-user`). Ao criar um campo novo no `user`, decida se ele entra em `PROTECTED_USER_FIELDS`.
+- Nome e avatar são validados no mesmo hook com os schemas de `src/lib/validation.ts` (`personName`, `avatarUrl`), valendo também para chamadas diretas à API.
+- Trocas sensíveis no perfil usam os endpoints do Better Auth: `changePassword` (com `revokeOtherSessions: true`), `changeEmail` (duas etapas: aprovação no e-mail atual + confirmação no novo) e `revokeOtherSessions`.
+- `getSessionState()` lê a sessão a partir de `cookies()` (e não só de `headers()`): após uma Server Action que emite cookie novo (ex.: troca de senha), a re-renderização na mesma resposta precisa enxergar a sessão nova.
+
 ## Defesa em Profundidade (Next.js 16)
 1. **Camada 1 — `src/proxy.ts`** (substitui `middleware.ts` no Next.js 16):
    - Verificação otimista de presença de cookie via `getSessionCookie(request)` (`better-auth/cookies`).

@@ -78,3 +78,30 @@ export function resetPasswordEmail(user: { email: string; name: string }, url: s
       "O link expira em 1 hora e só pode ser usado uma vez. Se não foi você, ignore este e-mail: sua senha continua a mesma.",
   });
 }
+
+/** 1ª etapa da troca de e-mail: enviado ao endereço ATUAL, que precisa aprovar a mudança. */
+export function changeEmailConfirmationEmail(user: { email: string; name: string }, newEmail: string, url: string) {
+  return renderActionEmail({
+    to: user.email,
+    subject: "Confirme a troca do e-mail da sua conta",
+    greetingName: user.name,
+    intro: `Recebemos um pedido para trocar o e-mail da sua conta para ${newEmail}. Para continuar, confirme pelo botão abaixo; depois enviaremos um link para o novo endereço.`,
+    actionLabel: "Aprovar troca de e-mail",
+    url,
+    outro:
+      "O link expira em 1 hora. Se não foi você, ignore este e-mail e troque sua senha: seu e-mail continua o mesmo.",
+  });
+}
+
+/** 2ª etapa da troca de e-mail: enviado ao endereço NOVO; a troca só acontece ao confirmar. */
+export function newEmailVerificationEmail(user: { email: string; name: string }, url: string) {
+  return renderActionEmail({
+    to: user.email,
+    subject: "Confirme seu novo e-mail no RAITec App",
+    greetingName: user.name,
+    intro: "Confirme este endereço para concluir a troca do e-mail da sua conta no RAITec App.",
+    actionLabel: "Confirmar novo e-mail",
+    url,
+    outro: "O link expira em 1 hora. Se você não pediu esta troca, ignore este e-mail.",
+  });
+}

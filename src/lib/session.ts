@@ -1,6 +1,6 @@
 import "server-only";
 import { asc } from "drizzle-orm";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
@@ -14,7 +14,7 @@ import type { Member } from "@/types";
 export type SessionState =
   | { status: "anonymous" }
   | { status: "unverified"; email: string; name: string }
-  | { status: "active"; member: Member };
+  | { status: "active"; member: Member; sessionId: string };
 
 /**
  * Estado da sessão real do Better Auth, deduplicado por requisição via `React.cache()`.
@@ -22,7 +22,7 @@ export type SessionState =
  * tem sessão, mas não acessa o app nem executa Server Actions até verificar.
  */
 export const getSessionState = cache(async (): Promise<SessionState> => {
-  const current = await auth.api.getSession({ headers: await headers() });
+  const current = await auth.api.getSession({ headers: await requestHeadersWithCurrentCookies() });
   if (!current?.user) return { status: "anonymous" };
 
   if (isPendingEmailVerification(current.user)) {
@@ -38,8 +38,21 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     eixo: current.user.eixo ? String(current.user.eixo) : null,
     time: current.user.time ? String(current.user.time) : null,
   });
-  return member ? { status: "active", member } : { status: "anonymous" };
+  return member ? { status: "active", member, sessionId: current.session.id } : { status: "anonymous" };
 });
+
+/**
+ * Cabeçalhos da requisição com os cookies ATUAIS. Quando uma Server Action grava um cookie novo (ex.: troca de
+ * senha com revogação de sessões emite uma sessão nova), o Next re-renderiza a página na mesma resposta:
+ * `headers()` ainda traz o cookie original (já revogado), mas `cookies()` reflete o que acabou de ser gravado.
+ */
+async function requestHeadersWithCurrentCookies() {
+  const merged = new Headers(await headers());
+  const cookieHeader = (await cookies()).toString();
+  if (cookieHeader) merged.set("cookie", cookieHeader);
+  else merged.delete("cookie");
+  return merged;
+}
 
 /** Membro autenticado e liberado (e-mail verificado quando exigido), ou `null`. */
 export async function getSessionMember(): Promise<Member | null> {

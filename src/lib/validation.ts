@@ -50,3 +50,37 @@ export function invalidResult(error: z.ZodError): ActionResult {
 
 /** id opcional vindo de <select>: "" vira undefined. */
 export const optionalId = z.preprocess((v) => (v === "" || v === null ? undefined : v), z.string().optional());
+
+/* ---------- Perfil (compartilhado por formulários, Server Actions e hooks do Better Auth) ---------- */
+
+export const PERSON_NAME_MIN = 3;
+export const PERSON_NAME_MAX = 80;
+export const AVATAR_URL_MAX = 2048;
+
+/** Nome exibido do membro: sem espaços nas pontas, 3–80 caracteres. */
+export const personName = z
+  .string({ error: "Informe seu nome completo." })
+  .trim()
+  .min(PERSON_NAME_MIN, "Informe seu nome completo (mínimo de 3 caracteres).")
+  .max(PERSON_NAME_MAX, "Use no máximo 80 caracteres.");
+
+/** URL do avatar: só `https:` (evita conteúdo misto e esquemas como `javascript:`); vazio remove o avatar. */
+export const avatarUrl = z
+  .string()
+  .trim()
+  .max(AVATAR_URL_MAX, "Endereço muito longo.")
+  .refine((v) => v === "" || isHttpsUrl(v), "Use um endereço de imagem começando com https://.");
+
+export function isHttpsUrl(value: string) {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Nova senha (mesma regra do Better Auth: `minPasswordLength: 8`, máximo padrão 128). */
+export const newPassword = z
+  .string({ error: "Informe a nova senha." })
+  .min(8, "A senha precisa ter ao menos 8 caracteres.")
+  .max(128, "Use no máximo 128 caracteres.");

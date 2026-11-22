@@ -31,6 +31,12 @@ export const ROLE_LABEL: Record<Role, string> = {
   diretoria: "Diretoria",
 };
 
+export const ROLE_TONE: Record<Role, "brand" | "accent" | "warning"> = {
+  membro: "brand",
+  coordenador: "accent",
+  diretoria: "warning",
+};
+
 export const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {
   capacitacao: "Capacitação",
   curso: "Curso",
