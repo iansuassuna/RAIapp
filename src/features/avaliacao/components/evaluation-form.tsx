@@ -6,7 +6,7 @@ import { describeMember, RATING_SCALE } from "@/config/options";
 import { useFormSubmit } from "@/lib/form";
 import type { Colleague, EvaluationCriterion } from "@/types";
 import { submitEvaluationAction } from "../actions";
-import { buildEvaluationSchema, toEvaluationInput, type EvaluationInput } from "../schemas";
+import { buildEvaluationSchema, type EvaluationInput, toEvaluationInput } from "../schemas";
 import { RatingScale } from "./rating-scale";
 
 type Props = {
@@ -18,11 +18,14 @@ type Props = {
 };
 
 export function EvaluationForm({ colleague, criteria, initial, onCancel, onSubmit }: Props) {
-  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(buildEvaluationSchema(criteria), async (data) => {
-    const result = await submitEvaluationAction(colleague.id, data);
-    if (result.ok) onSubmit(toEvaluationInput(data));
-    return result;
-  });
+  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(
+    buildEvaluationSchema(criteria),
+    async (data) => {
+      const result = await submitEvaluationAction(colleague.id, data);
+      if (result.ok) onSubmit(toEvaluationInput(data));
+      return result;
+    },
+  );
 
   const first = RATING_SCALE[0];
   const middle = RATING_SCALE[2];
@@ -41,9 +44,7 @@ export function EvaluationForm({ colleague, criteria, initial, onCancel, onSubmi
           <div>
             <p className="text-xs text-brand-200">Avaliando</p>
             <p className="font-display text-xl font-bold tracking-tight">{colleague.name}</p>
-            <p className="text-xs text-brand-200">
-              {describeMember(colleague)}
-            </p>
+            <p className="text-xs text-brand-200">{describeMember(colleague)}</p>
           </div>
         </div>
       </div>

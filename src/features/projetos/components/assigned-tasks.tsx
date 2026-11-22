@@ -10,7 +10,13 @@ import { TaskStatusSelect } from "./task-status-select";
  * Tarefas atribuídas ao membro (de todos os projetos) + prazos de requisições em andamento
  * (compras, verbas, reuniões…), ordenados por prazo.
  */
-export function AssignedTasks({ items, requestRows = [] }: { items: { task: Task; project: Project }[]; requestRows?: DeadlineRow[] }) {
+export function AssignedTasks({
+  items,
+  requestRows = [],
+}: {
+  items: { task: Task; project: Project }[];
+  requestRows?: DeadlineRow[];
+}) {
   const open = items.filter(({ task }) => task.status !== "concluida");
   const late = open.filter(({ task }) => isOverdue(task)).length;
 
@@ -36,7 +42,10 @@ export function AssignedTasks({ items, requestRows = [] }: { items: { task: Task
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold text-brand-950">{task.title}</span>
                     <span className="block text-xs text-ink-subtle">
-                      <Link href={`/eixos/${project.eixo}/projetos/${project.id}`} className="font-medium text-brand-600 hover:text-accent-600 hover:underline">
+                      <Link
+                        href={`/eixos/${project.eixo}/projetos/${project.id}`}
+                        className="font-medium text-brand-600 hover:text-accent-600 hover:underline"
+                      >
                         {project.name}
                       </Link>{" "}
                       ·{" "}

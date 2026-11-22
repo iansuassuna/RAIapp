@@ -14,7 +14,7 @@ export function Avatar({ name, src, className, decorative }: Props) {
       )}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
+        // biome-ignore lint/performance/noImgElement: Avatar aceita URLs externas arbitrárias fora dos domínios fixos do next.config
         <img src={src} alt="" className="size-full object-cover" />
       ) : (
         <span aria-hidden>{initials(name)}</span>

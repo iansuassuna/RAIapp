@@ -19,7 +19,10 @@ export default async function MemberAreaPage() {
   const requestRows = requestsToDeadlineRows(
     deadlines.map((d) => d.request),
     lookups,
-    { viewerId: member.id, href: (r) => (r.memberId === member.id ? "/minha-area/requisicoes" : `/eixos/${r.eixo}/painel`) },
+    {
+      viewerId: member.id,
+      href: (r) => (r.memberId === member.id ? "/minha-area/requisicoes" : `/eixos/${r.eixo}/painel`),
+    },
   );
 
   return (
@@ -29,7 +32,6 @@ export default async function MemberAreaPage() {
         <SectionTitle id="afiliados">Projetos afiliados</SectionTitle>
         <ProjectList
           projects={projects}
-          showEixo={member.role === "diretoria"}
           emptyTitle="Você não está afiliado a projetos"
           emptyText="A coordenação do seu eixo afilia os membros aos projetos."
         />

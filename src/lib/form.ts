@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import type { z } from "zod";
 import type { ActionResult } from "@/types";
 import { fieldErrors, formDataToObject } from "./validation";
@@ -12,7 +12,7 @@ import { fieldErrors, formDataToObject } from "./validation";
  */
 export function useFormSubmit<S extends z.ZodType>(
   schema: S,
-  onValid: (data: z.infer<S>) => Promise<ActionResult | void> | ActionResult | void,
+  onValid: (data: z.infer<S>) => Promise<ActionResult | undefined> | Promise<void> | ActionResult | undefined,
 ) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);

@@ -1,22 +1,26 @@
 "use client";
 
 import { ArrowRight, Mail } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Input, PasswordInput } from "@/components/ui";
-import { loginSchema } from "../schemas";
+import { Alert, Button, Input, PasswordInput } from "@/components/ui";
 import { useFormSubmit } from "@/lib/form";
+import { loginAction } from "../actions";
+import { loginSchema } from "../schemas";
 
 export function LoginForm() {
   const router = useRouter();
-  const { errors, loading, handleSubmit, handleChange } = useFormSubmit(loginSchema, async () => {
-    // TODO: integrar com a API de autenticação
-    await new Promise((r) => setTimeout(r, 700));
-    router.push("/dashboard");
+  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(loginSchema, async (data) => {
+    const result = await loginAction(data);
+    if (result.ok) {
+      router.push("/dashboard");
+      router.refresh();
+    }
+    return result;
   });
 
   return (
     <form onSubmit={handleSubmit} onChange={handleChange} noValidate className="space-y-4">
+      {formError && <Alert tone="danger">{formError}</Alert>}
       <Input
         id="email"
         type="email"
@@ -34,15 +38,9 @@ export function LoginForm() {
         error={errors.password}
       />
 
-      <div className="flex justify-end">
-        <Link href="#" className="text-sm font-medium text-brand-600 hover:text-accent-600">
-          Esqueceu sua senha?
-        </Link>
-      </div>
-
-      <Button type="submit" size="lg" block loading={loading} className="group">
+      <Button type="submit" size="lg" block loading={loading} className="group mt-2">
         Entrar
-        <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+        <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
       </Button>
     </form>
   );

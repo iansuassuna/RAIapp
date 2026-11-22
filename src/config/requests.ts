@@ -28,7 +28,14 @@ export const REQUEST_KIND_HINT: Record<RequestKind, string> = {
 };
 
 /** Tipos que um membro pode pedir à coordenação (nesta ordem no formulário). */
-export const MEMBER_REQUEST_KINDS: RequestKind[] = ["componente", "reuniao", "autorizacao", "verba", "compra", "outros"];
+export const MEMBER_REQUEST_KINDS: RequestKind[] = [
+  "componente",
+  "reuniao",
+  "autorizacao",
+  "verba",
+  "compra",
+  "outros",
+];
 
 export const PROGRESS_LABEL: Record<RequestProgress, string> = {
   "em-uso": "Em uso",
@@ -75,7 +82,9 @@ export const INITIAL_PROGRESS: Record<RequestKind, RequestProgress> = {
  * Próximos passos manuais (botões do painel). Compra → feito é feita por `completePurchase`
  * (pede os dados do item), por isso não está aqui.
  */
-export const NEXT_PROGRESS: Partial<Record<RequestKind, Partial<Record<RequestProgress, { to: RequestProgress; label: string }>>>> = {
+export const NEXT_PROGRESS: Partial<
+  Record<RequestKind, Partial<Record<RequestProgress, { to: RequestProgress; label: string }>>>
+> = {
   componente: { "em-uso": { to: "devolvido", label: "Marcar devolvido" } },
   reuniao: { agendada: { to: "realizada", label: "Marcar realizada" } },
   autorizacao: { ativa: { to: "revogada", label: "Revogar" } },
@@ -88,7 +97,14 @@ export const NEXT_PROGRESS: Partial<Record<RequestKind, Partial<Record<RequestPr
 };
 
 /** Andamentos que encerram o ciclo. */
-export const FINAL_PROGRESS: RequestProgress[] = ["devolvido", "realizada", "expirada", "revogada", "prestacao-entregue", "feito"];
+export const FINAL_PROGRESS: RequestProgress[] = [
+  "devolvido",
+  "realizada",
+  "expirada",
+  "revogada",
+  "prestacao-entregue",
+  "feito",
+];
 
 /**
  * Andamento efetivo na data de hoje: reunião passada vira "realizada" e

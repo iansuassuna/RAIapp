@@ -10,10 +10,7 @@ export function RatingScale({ criterion, defaultValue, error }: Props) {
   return (
     <fieldset
       aria-describedby={error ? errorId : undefined}
-      className={cn(
-        "rounded-card bg-surface p-4 shadow-card ring-1 ring-line/60",
-        error && "ring-2 ring-danger-500",
-      )}
+      className={cn("rounded-card bg-surface p-4 shadow-card ring-1 ring-line/60", error && "ring-2 ring-danger-500")}
     >
       <legend className="sr-only">{criterion.label}</legend>
       <p aria-hidden className="font-display text-sm font-bold text-brand-900">

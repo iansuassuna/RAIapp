@@ -44,7 +44,15 @@ export function AllocationForm({ action, inventory }: Props) {
             }))}
             error={errors.componentId}
           />
-          <Input id="quantity" type="number" min={1} label="Qtd." icon={Hash} defaultValue={1} error={errors.quantity} />
+          <Input
+            id="quantity"
+            type="number"
+            min={1}
+            label="Qtd."
+            icon={Hash}
+            defaultValue={1}
+            error={errors.quantity}
+          />
         </div>
         <div className="flex justify-end">
           <Button type="submit" loading={loading}>

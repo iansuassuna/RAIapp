@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { isEixo } from "@/config/options";
+import { runAuthenticatedAction } from "@/lib/action-helpers";
 import {
   addTask,
   allocateComponent,
@@ -12,7 +12,6 @@ import {
   updateProject,
   updateTaskStatus,
 } from "@/lib/api";
-import { getCurrentMember } from "@/lib/session";
 import { invalidResult } from "@/lib/validation";
 import type { ActionResult } from "@/types";
 import { allocationSchema, projectSchema, taskSchema, taskStatusSchema } from "./schemas";
@@ -22,50 +21,51 @@ import { allocationSchema, projectSchema, taskSchema, taskStatusSchema } from ".
  * de permissão para `lib/api` (nunca confie no que vem do cliente).
  */
 
-function done(result: ActionResult) {
-  if (result.ok) revalidatePath("/", "layout");
-  return result;
-}
-
 export async function createProjectAction(eixo: string, input: unknown): Promise<ActionResult> {
   if (!isEixo(eixo)) return { ok: false, error: "Eixo inválido." };
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
-  return done(await createProject(await getCurrentMember(), eixo, parsed.data));
+  return runAuthenticatedAction((viewer) => createProject(viewer, eixo, parsed.data));
 }
 
 export async function updateProjectAction(projectId: string, input: unknown): Promise<ActionResult> {
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
-  return done(await updateProject(await getCurrentMember(), projectId, parsed.data));
+  return runAuthenticatedAction((viewer) => updateProject(viewer, projectId, parsed.data));
 }
 
 export async function deleteProjectAction(projectId: string): Promise<ActionResult> {
-  return done(await deleteProject(await getCurrentMember(), projectId));
+  return runAuthenticatedAction((viewer) => deleteProject(viewer, projectId));
 }
 
 export async function addTaskAction(projectId: string, input: unknown): Promise<ActionResult> {
   const parsed = taskSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
-  return done(await addTask(await getCurrentMember(), projectId, parsed.data));
+  return runAuthenticatedAction((viewer) => addTask(viewer, projectId, parsed.data));
 }
 
 export async function deleteTaskAction(projectId: string, taskId: string): Promise<ActionResult> {
-  return done(await deleteTask(await getCurrentMember(), projectId, taskId));
+  return runAuthenticatedAction((viewer) => deleteTask(viewer, projectId, taskId));
 }
 
-export async function updateTaskStatusAction(projectId: string, taskId: string, status: unknown): Promise<ActionResult> {
+export async function updateTaskStatusAction(
+  projectId: string,
+  taskId: string,
+  status: unknown,
+): Promise<ActionResult> {
   const parsed = taskStatusSchema.safeParse(status);
   if (!parsed.success) return { ok: false, error: "Status inválido." };
-  return done(await updateTaskStatus(await getCurrentMember(), projectId, taskId, parsed.data));
+  return runAuthenticatedAction((viewer) => updateTaskStatus(viewer, projectId, taskId, parsed.data));
 }
 
 export async function allocateComponentAction(projectId: string, input: unknown): Promise<ActionResult> {
   const parsed = allocationSchema.safeParse(input);
   if (!parsed.success) return invalidResult(parsed.error);
-  return done(await allocateComponent(await getCurrentMember(), projectId, parsed.data.componentId, parsed.data.quantity));
+  return runAuthenticatedAction((viewer) =>
+    allocateComponent(viewer, projectId, parsed.data.componentId, parsed.data.quantity),
+  );
 }
 
 export async function removeComponentAction(projectId: string, componentId: string): Promise<ActionResult> {
-  return done(await removeComponent(await getCurrentMember(), projectId, componentId));
+  return runAuthenticatedAction((viewer) => removeComponent(viewer, projectId, componentId));
 }

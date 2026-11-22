@@ -1,11 +1,15 @@
 import { z } from "zod";
 import { PROJECT_STATUSES, TASK_STATUSES } from "@/config/options";
-import type { ProjectStatus, TaskStatus } from "@/types";
 import { isoDate, optionalId, optionalText, stringArray } from "@/lib/validation";
+import type { ProjectStatus, TaskStatus } from "@/types";
 
 export const projectSchema = z
   .object({
-    name: z.string().trim().min(3, "Informe o nome do projeto (mín. 3 caracteres).").max(80, "Máximo de 80 caracteres."),
+    name: z
+      .string()
+      .trim()
+      .min(3, "Informe o nome do projeto (mín. 3 caracteres).")
+      .max(80, "Máximo de 80 caracteres."),
     description: optionalText(500, "A descrição pode ter no máximo 500 caracteres."),
     status: z.enum(PROJECT_STATUSES as [ProjectStatus, ...ProjectStatus[]], { error: "Selecione o status." }),
     startDate: isoDate("Informe a data de início."),

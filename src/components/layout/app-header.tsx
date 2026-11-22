@@ -1,13 +1,14 @@
 "use client";
 
-import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Avatar } from "@/components/ui";
 import { LogoMark } from "@/components/brand/logo";
+import { Avatar } from "@/components/ui";
 import { getNavItems, isActivePath } from "@/config/navigation";
 import { describeMember } from "@/config/options";
+import { logoutAction } from "@/lib/auth-actions";
 import { cn } from "@/lib/cn";
 import type { Member } from "@/types";
 import { DevMemberSwitcher } from "./dev-member-switcher";
@@ -52,7 +53,9 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition",
-                  active ? "bg-white/10 text-white ring-1 ring-white/15" : "text-brand-200 hover:bg-white/5 hover:text-white",
+                  active
+                    ? "bg-white/10 text-white ring-1 ring-white/15"
+                    : "text-brand-200 hover:bg-white/5 hover:text-white",
                 )}
               >
                 <Icon className={cn("hidden size-4 lg:block", active && "text-accent-300")} aria-hidden />
@@ -62,15 +65,7 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
           })}
         </nav>
 
-        <button
-          type="button"
-          aria-label="Notificações"
-          className="relative order-last grid size-10 place-items-center rounded-full text-brand-100 transition hover:bg-white/10 sm:order-none"
-        >
-          <Bell className="size-5" />
-          <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-accent-400 ring-2 ring-brand-900" />
-        </button>
-
+        {/* Notificações, "Meu perfil" e "Configurações" entram com o escopo futuro (Fases 3 e 4 do plano). */}
         <div ref={menuRef} className="relative mr-auto sm:mr-0">
           <button
             type="button"
@@ -82,11 +77,9 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
             <Avatar decorative name={member.name} src={member.avatarUrl} />
             <span className="min-w-0 max-w-44 text-left leading-tight">
               <span className="block truncate font-display text-sm font-semibold">{member.name}</span>
-              <span className="block truncate text-xs text-brand-200">
-                {describeMember(member)}
-              </span>
+              <span className="block truncate text-xs text-brand-200">{describeMember(member)}</span>
             </span>
-            <ChevronDown className={`size-4 text-brand-200 transition ${open ? "rotate-180" : ""}`} />
+            <ChevronDown className={`size-4 text-brand-200 transition ${open ? "rotate-180" : ""}`} aria-hidden />
           </button>
 
           {open && (
@@ -94,29 +87,21 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
               role="menu"
               className="animate-fade-up absolute left-0 mt-2 w-72 overflow-hidden rounded-card bg-surface p-1.5 text-ink shadow-raised ring-1 ring-line sm:left-auto sm:right-0"
             >
-              {[
-                { icon: User, label: "Meu perfil", href: "#" },
-                { icon: Settings, label: "Configurações", href: "#" },
-              ].map(({ icon: Icon, label, href }) => (
-                <Link
-                  key={label}
+              {devMembers.length > 0 && (
+                <>
+                  <DevMemberSwitcher current={member} members={devMembers} />
+                  <div className="my-1 h-px bg-line" />
+                </>
+              )}
+              <form action={logoutAction}>
+                <button
+                  type="submit"
                   role="menuitem"
-                  href={href}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-surface-muted"
+                  className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-danger-500 hover:bg-danger-50"
                 >
-                  <Icon className="size-4 text-ink-muted" /> {label}
-                </Link>
-              ))}
-              <div className="my-1 h-px bg-line" />
-              <DevMemberSwitcher current={member} members={devMembers} />
-              <div className="my-1 h-px bg-line" />
-              <Link
-                role="menuitem"
-                href="/login"
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-danger-500 hover:bg-danger-50"
-              >
-                <LogOut className="size-4" /> Sair
-              </Link>
+                  <LogOut className="size-4" aria-hidden /> Sair
+                </button>
+              </form>
             </div>
           )}
         </div>

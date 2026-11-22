@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Avatar, Badge, Card, ScorePanel, SectionTitle } from "@/components/ui";
 import { describeMember } from "@/config/options";
 import type { Colleague, EvaluationCycle } from "@/types";
@@ -17,10 +17,10 @@ export function CrossEvaluation({ cycle }: { cycle: EvaluationCycle }) {
   const done = cycle.colleagues.filter((c) => evaluations[c.id]).length;
   const total = cycle.colleagues.length;
 
-  // Ao trocar entre lista e formulário, volta ao topo da página.
-  useEffect(() => {
+  function selectStep(next: Colleague | null) {
+    setCurrent(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [current]);
+  }
 
   if (current) {
     return (
@@ -29,11 +29,11 @@ export function CrossEvaluation({ cycle }: { cycle: EvaluationCycle }) {
         colleague={current}
         criteria={cycle.criteria}
         initial={evaluations[current.id]}
-        onCancel={() => setCurrent(null)}
+        onCancel={() => selectStep(null)}
         onSubmit={(data) => {
           setEvaluations((prev) => ({ ...prev, [current.id]: data }));
           setNotice(`Avaliação de ${current.name} enviada.`);
-          setCurrent(null);
+          selectStep(null);
         }}
       />
     );
@@ -74,16 +74,14 @@ export function CrossEvaluation({ cycle }: { cycle: EvaluationCycle }) {
                     type="button"
                     onClick={() => {
                       setNotice(null);
-                      setCurrent(c);
+                      selectStep(c);
                     }}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-surface-muted/70"
                   >
                     <Avatar decorative name={c.name} className="size-10 ring-0" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-brand-950">{c.name}</span>
-                      <span className="block text-xs text-ink-subtle">
-                        {describeMember(c)}
-                      </span>
+                      <span className="block text-xs text-ink-subtle">{describeMember(c)}</span>
                     </span>
                     <Badge tone={completed ? "success" : "warning"}>{completed ? "Concluída" : "Pendente"}</Badge>
                     <ChevronRight aria-hidden className="size-4 text-ink-subtle" />

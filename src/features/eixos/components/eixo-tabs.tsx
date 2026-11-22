@@ -20,7 +20,9 @@ export function EixoTabs({ eixos, active }: { eixos: Eixo[]; active: Eixo }) {
             aria-current={selected ? "page" : undefined}
             className={cn(
               "flex min-h-11 items-center justify-center rounded-xl px-2 py-2 text-center font-display text-xs font-semibold leading-tight tracking-tight transition sm:text-sm",
-              selected ? "bg-brand-900 text-white shadow-raised" : "text-ink-muted hover:bg-surface-muted hover:text-brand-900",
+              selected
+                ? "bg-brand-900 text-white shadow-raised"
+                : "text-ink-muted hover:bg-surface-muted hover:text-brand-900",
             )}
           >
             {eixoLabel(eixo)}

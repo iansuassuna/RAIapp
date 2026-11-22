@@ -21,7 +21,8 @@ export function ProjectMembers({ project, members }: { project: Project; members
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-brand-950">{m.name}</span>
                     <span className="block text-xs text-ink-subtle">
-                      {m.time ? `${timeLabel(m.time)} · ` : ""}{open} {open === 1 ? "tarefa aberta" : "tarefas abertas"}
+                      {m.time ? `${timeLabel(m.time)} · ` : ""}
+                      {open} {open === 1 ? "tarefa aberta" : "tarefas abertas"}
                     </span>
                   </span>
                   {m.role !== "membro" && <Badge tone="accent">{ROLE_LABEL[m.role]}</Badge>}

@@ -2,22 +2,34 @@
 
 import { Layers, Mail, User, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button, Input, PasswordInput, Select } from "@/components/ui";
+import { Alert, Button, Input, PasswordInput, Select } from "@/components/ui";
 import { EIXOS, TIMES } from "@/config/options";
-import { registerSchema } from "../schemas";
 import { useFormSubmit } from "@/lib/form";
+import { registerAction } from "../actions";
+import { registerSchema } from "../schemas";
 
 export function RegisterForm() {
   const router = useRouter();
-  const { errors, loading, handleSubmit, handleChange } = useFormSubmit(registerSchema, async () => {
-    // TODO: integrar com a API de cadastro
-    await new Promise((r) => setTimeout(r, 900));
-    router.push("/dashboard");
+  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(registerSchema, async (data) => {
+    const result = await registerAction(data);
+    if (result.ok) {
+      router.push("/dashboard");
+      router.refresh();
+    }
+    return result;
   });
 
   return (
     <form onSubmit={handleSubmit} onChange={handleChange} noValidate className="space-y-4">
-      <Input id="name" label="Nome" icon={User} placeholder="Insira seu nome..." autoComplete="name" error={errors.name} />
+      {formError && <Alert tone="danger">{formError}</Alert>}
+      <Input
+        id="name"
+        label="Nome"
+        icon={User}
+        placeholder="Insira seu nome..."
+        autoComplete="name"
+        error={errors.name}
+      />
       <Input
         id="email"
         type="email"
@@ -46,8 +58,24 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-4">
-        <Select id="eixo" label="Eixo" icon={Layers} placeholder="Selecione seu eixo..." options={EIXOS} required error={errors.eixo} />
-        <Select id="time" label="Time" icon={Users} placeholder="Selecione seu time..." options={TIMES} required error={errors.time} />
+        <Select
+          id="eixo"
+          label="Eixo"
+          icon={Layers}
+          placeholder="Selecione seu eixo..."
+          options={EIXOS}
+          required
+          error={errors.eixo}
+        />
+        <Select
+          id="time"
+          label="Time"
+          icon={Users}
+          placeholder="Selecione seu time..."
+          options={TIMES}
+          required
+          error={errors.time}
+        />
       </div>
 
       <Button type="submit" size="lg" block loading={loading} className="mt-6">

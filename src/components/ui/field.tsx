@@ -23,7 +23,17 @@ type FieldShellProps = {
  * Casca do campo: rótulo flutuante, ícone à esquerda, ação opcional à direita
  * e mensagem de erro acessível. Mantém o visual "rótulo + placeholder" do protótipo.
  */
-export function FieldShell({ id, label, icon: Icon, error, hint, trailing, children, className, multiline }: FieldShellProps) {
+export function FieldShell({
+  id,
+  label,
+  icon: Icon,
+  error,
+  hint,
+  trailing,
+  children,
+  className,
+  multiline,
+}: FieldShellProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
       <div className="relative">

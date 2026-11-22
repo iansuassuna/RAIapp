@@ -19,7 +19,12 @@ export default async function NewInventoryItemPage() {
     <div className="mx-auto max-w-2xl space-y-4 pt-7">
       <SectionTitle>{asProposal ? "Propor novo item" : "Novo item no inventário"}</SectionTitle>
       <Card>
-        <InventoryForm action={createInventoryItemAction} ownerOptions={ownerSelectOptions(owners)} cancelHref="/inventario" asProposal={asProposal} />
+        <InventoryForm
+          action={createInventoryItemAction}
+          ownerOptions={ownerSelectOptions(owners)}
+          cancelHref="/inventario"
+          asProposal={asProposal}
+        />
       </Card>
     </div>
   );

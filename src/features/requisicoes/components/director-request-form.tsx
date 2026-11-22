@@ -11,15 +11,18 @@ import { directorRequestSchema } from "../schemas";
 export function DirectorRequestForm({ action }: { action: (input: unknown) => Promise<ActionResult> }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(directorRequestSchema, async (data) => {
-    setNotice(null);
-    const result = await action(data);
-    if (result.ok) {
-      formRef.current?.reset();
-      setNotice("Pedido enviado para a diretoria.");
-    }
-    return result;
-  });
+  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(
+    directorRequestSchema,
+    async (data) => {
+      setNotice(null);
+      const result = await action(data);
+      if (result.ok) {
+        formRef.current?.reset();
+        setNotice("Pedido enviado para a diretoria.");
+      }
+      return result;
+    },
+  );
 
   return (
     <Card>
@@ -31,9 +34,30 @@ export function DirectorRequestForm({ action }: { action: (input: unknown) => Pr
         {formError && <Alert tone="danger">{formError}</Alert>}
         {notice && <Alert tone="success">{notice}</Alert>}
         <input type="hidden" name="kind" value="pedido" />
-        <Input id="title" label="Título" icon={Type} placeholder="Ex.: Kits de Arduino para a capacitação" error={errors.title} />
-        <Textarea id="explanation" label="Explicação: o que é preciso" icon={Text} placeholder="Descreva o pedido..." rows={3} maxLength={500} error={errors.explanation} />
-        <Textarea id="justification" label="Justificativa" icon={MessageSquareText} placeholder="Por que isso é necessário?" maxLength={500} error={errors.justification} />
+        <Input
+          id="title"
+          label="Título"
+          icon={Type}
+          placeholder="Ex.: Kits de Arduino para a capacitação"
+          error={errors.title}
+        />
+        <Textarea
+          id="explanation"
+          label="Explicação: o que é preciso"
+          icon={Text}
+          placeholder="Descreva o pedido..."
+          rows={3}
+          maxLength={500}
+          error={errors.explanation}
+        />
+        <Textarea
+          id="justification"
+          label="Justificativa"
+          icon={MessageSquareText}
+          placeholder="Por que isso é necessário?"
+          maxLength={500}
+          error={errors.justification}
+        />
         <div className="flex justify-end">
           <Button type="submit" size="lg" loading={loading} className="w-full sm:w-auto">
             Enviar pedido <Send className="size-4" aria-hidden />

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AuthCard, LoginForm } from "@/features/auth";
+import { AuthCard, DevQuickLogin, LoginForm } from "@/features/auth";
+import { getDevQuickSwitchMembers } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Entrar" };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const devMembers = await getDevQuickSwitchMembers();
+
   return (
     <AuthCard
       title="Bem-vindo de volta"
@@ -12,13 +15,17 @@ export default function LoginPage() {
       footer={
         <>
           Ainda não possui conta?{" "}
-          <Link href="/cadastro" className="font-semibold text-brand-700 underline-offset-4 hover:text-accent-600 hover:underline">
+          <Link
+            href="/cadastro"
+            className="font-semibold text-brand-700 underline-offset-4 hover:text-accent-600 hover:underline"
+          >
             Cadastre-se no RAIapp
           </Link>
         </>
       }
     >
       <LoginForm />
+      <DevQuickLogin members={devMembers} />
     </AuthCard>
   );
 }

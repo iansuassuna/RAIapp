@@ -15,22 +15,24 @@ export function ReceivedScores({ cycle }: { cycle: EvaluationCycle }) {
         {Object.keys(cycle.received).length === 0 && (
           <EmptyState icon={BarChart3} title="Sem avaliações no ciclo anterior" />
         )}
-        {Object.keys(cycle.received).length > 0 && cycle.criteria.map((c) => {
-          const avg = cycle.received[c.id] ?? 0;
-          return (
-            <div key={c.id}>
-              <div className="mb-2 flex items-baseline justify-between">
-                <span className="text-sm font-semibold text-brand-950">{c.label}</span>
-                <span className="font-display text-sm font-bold text-iris-600">{formatAverage(avg)}</span>
+        {Object.keys(cycle.received).length > 0 &&
+          cycle.criteria.map((c) => {
+            const avg = cycle.received[c.id] ?? 0;
+            return (
+              <div key={c.id}>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <span className="text-sm font-semibold text-brand-950">{c.label}</span>
+                  <span className="font-display text-sm font-bold text-iris-600">{formatAverage(avg)}</span>
+                </div>
+                <Progress value={avg} max={5} tone="light" label={`Média em ${c.label}`} />
               </div>
-              <Progress value={avg} max={5} tone="light" label={`Média em ${c.label}`} />
-            </div>
-          );
-        })}
+            );
+          })}
       </Card>
       <p className="flex items-start gap-2 px-1 text-xs text-ink-subtle">
         <ShieldCheck className="mt-px size-4 shrink-0 text-accent-600" />
-        Quem é avaliado vê apenas as médias, nunca quem deu cada nota. A coordenação do eixo do avaliado tem acesso às avaliações detalhadas.
+        Quem é avaliado vê apenas as médias, nunca quem deu cada nota. A coordenação do eixo do avaliado tem acesso às
+        avaliações detalhadas.
       </p>
     </section>
   );

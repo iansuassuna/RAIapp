@@ -55,7 +55,10 @@ export default async function ProjectPage({ params }: Props) {
             actions={
               manages && (
                 <>
-                  <Link href={`${listHref}/${project.id}/editar`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                  <Link
+                    href={`${listHref}/${project.id}/editar`}
+                    className={buttonVariants({ variant: "ghost", size: "sm" })}
+                  >
                     <Pencil className="size-4" aria-hidden /> Editar
                   </Link>
                   <DeleteProjectButton action={deleteProjectAction.bind(null, project.id)} redirectTo={listHref} />
@@ -63,7 +66,13 @@ export default async function ProjectPage({ params }: Props) {
               )
             }
           />
-          <TaskList project={project} memberNames={memberNames} viewerId={member.id} canManage={manages} purchaseRows={purchaseRows} />
+          <TaskList
+            project={project}
+            memberNames={memberNames}
+            viewerId={member.id}
+            canManage={manages}
+            purchaseRows={purchaseRows}
+          />
         </div>
         <div className="space-y-8">
           <ProjectMembers project={project} members={affiliated} />

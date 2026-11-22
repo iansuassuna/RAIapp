@@ -11,7 +11,11 @@ import { getCurrentMember } from "@/lib/session";
 export const metadata: Metadata = { title: "Avaliações do membro" };
 
 /** Avaliações cruzadas detalhadas de um membro — só para a coordenação do eixo dele. */
-export default async function MemberEvaluationsPage({ params }: { params: Promise<{ eixo: string; memberId: string }> }) {
+export default async function MemberEvaluationsPage({
+  params,
+}: {
+  params: Promise<{ eixo: string; memberId: string }>;
+}) {
   const { eixo, memberId } = await params;
   if (!isEixo(eixo)) notFound();
   const target = await getMember(memberId);
@@ -30,9 +34,7 @@ export default async function MemberEvaluationsPage({ params }: { params: Promis
         <div>
           <p className="text-xs text-ink-subtle">Avaliações cruzadas recebidas</p>
           <h2 className="font-display text-2xl font-bold tracking-tight text-brand-950">{target.name}</h2>
-          <p className="text-sm text-ink-muted">
-            {memberRoleOrTime(target)}
-          </p>
+          <p className="text-sm text-ink-muted">{memberRoleOrTime(target)}</p>
         </div>
       </div>
       <MemberEvaluations cycles={report.cycles} />

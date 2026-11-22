@@ -18,7 +18,8 @@ export function DeleteItemButton({ action, asProposal }: { action: () => Promise
         onConfirm={async () => {
           const result = await action();
           if (!result.ok) setMessage({ tone: "danger", text: result.error });
-          else if (result.pending) setMessage({ tone: "success", text: "Proposta de exclusão enviada para aprovação." });
+          else if (result.pending)
+            setMessage({ tone: "success", text: "Proposta de exclusão enviada para aprovação." });
           else router.push("/inventario");
         }}
       >

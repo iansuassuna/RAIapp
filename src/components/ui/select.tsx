@@ -15,7 +15,7 @@ type Props = SelectHTMLAttributes<HTMLSelectElement> & {
 };
 
 export const Select = forwardRef<HTMLSelectElement, Props>(
-  ({ id, label, icon, placeholder, options, error, className, defaultValue = "", placeholderSelectable, ...props }, ref) => (
+  ({ id, label, icon, placeholder, options, error, className, defaultValue, placeholderSelectable, ...props }, ref) => (
     <FieldShell
       id={id}
       label={label}
@@ -27,7 +27,8 @@ export const Select = forwardRef<HTMLSelectElement, Props>(
         ref={ref}
         id={id}
         name={props.name ?? id}
-        defaultValue={defaultValue}
+        // Controlado (`value`) ou não controlado (`defaultValue`, padrão: placeholder) — nunca os dois.
+        defaultValue={props.value === undefined ? (defaultValue ?? "") : undefined}
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(

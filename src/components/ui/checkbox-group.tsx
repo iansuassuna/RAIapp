@@ -25,7 +25,13 @@ export function CheckboxGroup({ name, legend, options, defaultValues = [], error
             key={o.value}
             className="flex min-h-11 cursor-pointer items-center gap-3 rounded-field bg-surface px-3 py-2 ring-1 ring-line transition hover:ring-brand-200 has-checked:bg-brand-50 has-checked:ring-brand-300 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent-500"
           >
-            <input type="checkbox" name={name} value={o.value} defaultChecked={defaultValues.includes(o.value)} className="peer sr-only" />
+            <input
+              type="checkbox"
+              name={name}
+              value={o.value}
+              defaultChecked={defaultValues.includes(o.value)}
+              className="peer sr-only"
+            />
             <span className="grid size-5 shrink-0 place-items-center rounded-md ring-1 ring-line bg-surface text-transparent transition peer-checked:bg-brand-900 peer-checked:text-white peer-checked:ring-brand-900">
               <Check className="size-3.5" aria-hidden />
             </span>

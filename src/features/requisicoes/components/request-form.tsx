@@ -11,13 +11,13 @@ import {
   FolderKanban,
   Hash,
   KeyRound,
+  type LucideIcon,
   MessageSquareText,
   PackageOpen,
   Send,
   ShoppingCart,
   Text,
   Users,
-  type LucideIcon,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Alert, Button, Card, Input, Select, Textarea } from "@/components/ui";
@@ -48,15 +48,20 @@ export function RequestForm({ action, inventory, projects }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const [kind, setKind] = useState<RequestKind>("componente");
   const [notice, setNotice] = useState<string | null>(null);
-  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(memberRequestSchema, async (data) => {
-    setNotice(null);
-    const result = await action(data);
-    if (result.ok) {
-      formRef.current?.reset();
-      setNotice(`${REQUEST_KIND_LABEL[data.kind]}: requisição enviada para a coordenação do seu eixo.`);
-    }
-    return result;
-  });
+  const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(
+    memberRequestSchema,
+    async (data) => {
+      setNotice(null);
+      const result = await action(data);
+      if (result.ok) {
+        formRef.current?.reset();
+        setNotice(`${REQUEST_KIND_LABEL[data.kind]}: requisição enviada para a coordenação do seu eixo.`);
+      }
+      // O aviso (sucesso ou erro) fica no topo do formulário; o botão de envio fica no fim. Traz o aviso à vista.
+      requestAnimationFrame(() => formRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+      return result;
+    },
+  );
 
   return (
     <Card>
@@ -79,13 +84,24 @@ export function RequestForm({ action, inventory, projects }: Props) {
                   key={value}
                   className={cn(
                     "flex cursor-pointer flex-col gap-1 rounded-field px-3 py-3 ring-1 transition has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent-500",
-                    selected ? "bg-brand-900 text-white ring-brand-900 shadow-glow" : "bg-surface text-brand-950 ring-line hover:ring-brand-200",
+                    selected
+                      ? "bg-brand-900 text-white ring-brand-900 shadow-glow"
+                      : "bg-surface text-brand-950 ring-line hover:ring-brand-200",
                   )}
                 >
-                  <input type="radio" name="kind" value={value} checked={selected} onChange={() => setKind(value)} className="sr-only" />
+                  <input
+                    type="radio"
+                    name="kind"
+                    value={value}
+                    checked={selected}
+                    onChange={() => setKind(value)}
+                    className="sr-only"
+                  />
                   <Icon className="size-5" aria-hidden />
                   <span className="text-sm font-semibold leading-tight">{REQUEST_KIND_LABEL[value]}</span>
-                  <span className={cn("text-[11px] leading-tight", selected ? "text-brand-200" : "text-ink-subtle")}>{REQUEST_KIND_HINT[value]}</span>
+                  <span className={cn("text-[11px] leading-tight", selected ? "text-brand-200" : "text-ink-subtle")}>
+                    {REQUEST_KIND_HINT[value]}
+                  </span>
                 </label>
               );
             })}
@@ -106,7 +122,16 @@ export function RequestForm({ action, inventory, projects }: Props) {
               }))}
               error={errors.componentId}
             />
-            <Input id="quantity" type="number" min={1} max={50} label="Qtd." icon={Hash} defaultValue={1} error={errors.quantity} />
+            <Input
+              id="quantity"
+              type="number"
+              min={1}
+              max={50}
+              label="Qtd."
+              icon={Hash}
+              defaultValue={1}
+              error={errors.quantity}
+            />
           </div>
         )}
 
@@ -114,7 +139,14 @@ export function RequestForm({ action, inventory, projects }: Props) {
           <div className="grid gap-4 sm:grid-cols-3">
             <Input id="date" type="date" label="Data" icon={CalendarDays} error={errors.date} />
             <Input id="time" type="time" label="Horário" icon={Clock} error={errors.time} />
-            <Select id="room" label="Sala" icon={DoorOpen} placeholder="Escolha..." options={ROOMS} error={errors.room} />
+            <Select
+              id="room"
+              label="Sala"
+              icon={DoorOpen}
+              placeholder="Escolha..."
+              options={ROOMS}
+              error={errors.room}
+            />
           </div>
         )}
 
@@ -128,29 +160,88 @@ export function RequestForm({ action, inventory, projects }: Props) {
         {kind === "verba" && (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input id="amount" type="number" min={0} step="0.01" label="Valor (R$)" icon={Banknote} error={errors.amount} />
-              <Input id="deadline" type="date" label="Prazo de confecção" icon={CalendarClock} error={errors.deadline} />
+              <Input
+                id="amount"
+                type="number"
+                min={0}
+                step="0.01"
+                label="Valor (R$)"
+                icon={Banknote}
+                error={errors.amount}
+              />
+              <Input
+                id="deadline"
+                type="date"
+                label="Prazo de confecção"
+                icon={CalendarClock}
+                error={errors.deadline}
+              />
             </div>
-            <Textarea id="usage" label="Como será utilizada" icon={Text} placeholder="Ex.: transporte de 4 membros até a feira" rows={2} maxLength={300} error={errors.usage} />
+            <Textarea
+              id="usage"
+              label="Como será utilizada"
+              icon={Text}
+              placeholder="Ex.: transporte de 4 membros até a feira"
+              rows={2}
+              maxLength={300}
+              error={errors.usage}
+            />
           </>
         )}
 
         {kind === "compra" && (
           <>
             <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
-              <Input id="itemName" label="Componente" icon={Cpu} placeholder="Ex.: Sensor de gás MQ-135" error={errors.itemName} />
-              <Input id="quantity" type="number" min={1} max={50} label="Qtd." icon={Hash} defaultValue={1} error={errors.quantity} />
+              <Input
+                id="itemName"
+                label="Componente"
+                icon={Cpu}
+                placeholder="Ex.: Sensor de gás MQ-135"
+                error={errors.itemName}
+              />
+              <Input
+                id="quantity"
+                type="number"
+                min={1}
+                max={50}
+                label="Qtd."
+                icon={Hash}
+                defaultValue={1}
+                error={errors.quantity}
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input id="deadline" type="date" label="Prazo de confecção" icon={CalendarClock} error={errors.deadline} />
-              <Input id="estimatedValue" type="number" min={0} step="0.01" label="Valor estimado (R$)" icon={Banknote} error={errors.estimatedValue} />
+              <Input
+                id="deadline"
+                type="date"
+                label="Prazo de confecção"
+                icon={CalendarClock}
+                error={errors.deadline}
+              />
+              <Input
+                id="estimatedValue"
+                type="number"
+                min={0}
+                step="0.01"
+                label="Valor estimado (R$)"
+                icon={Banknote}
+                error={errors.estimatedValue}
+              />
             </div>
           </>
         )}
 
         {kind === "outros" && (
           <>
-            <Textarea id="explanation" label="Explicação" icon={Text} placeholder="O que você precisa?" rows={3} maxLength={500} error={errors.explanation} />
+            <Textarea
+              id="explanation"
+              label="Explicação"
+              icon={Text}
+              placeholder="O que você precisa?"
+              rows={3}
+              maxLength={500}
+              error={errors.explanation}
+            />
             <Input id="date" type="date" label="Data / prazo (opcional)" icon={CalendarDays} error={errors.date} />
           </>
         )}
@@ -164,7 +255,14 @@ export function RequestForm({ action, inventory, projects }: Props) {
           options={projects.map((p) => ({ value: p.id, label: p.name }))}
           error={errors.projectId}
         />
-        <Textarea id="justification" label="Justificativa" icon={MessageSquareText} placeholder="Por que isso é necessário?" maxLength={500} error={errors.justification} />
+        <Textarea
+          id="justification"
+          label="Justificativa"
+          icon={MessageSquareText}
+          placeholder="Por que isso é necessário?"
+          maxLength={500}
+          error={errors.justification}
+        />
 
         <div className="flex justify-end">
           <Button type="submit" size="lg" loading={loading} className="w-full sm:w-auto">

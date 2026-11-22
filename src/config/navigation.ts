@@ -1,4 +1,4 @@
-import { Boxes, ClipboardCheck, House, Landmark, Layers, UserRound, type LucideIcon } from "lucide-react";
+import { Boxes, ClipboardCheck, House, Landmark, Layers, type LucideIcon, UserRound } from "lucide-react";
 import type { Role } from "@/types";
 
 export type NavItem = { href: string; label: string; icon: LucideIcon };

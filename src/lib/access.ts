@@ -43,9 +43,21 @@ export function canReviewDirectorRequests(viewer: Viewer) {
   return viewer.role === "diretoria";
 }
 
+/** "Minha área" (projetos afiliados, tarefas e requisições): membros e coordenação. A diretoria usa `/diretoria`. */
+export function hasMemberArea(viewer: Viewer) {
+  return viewer.role !== "diretoria";
+}
+
+/** Gestão de papéis e vínculos de membros (exclusiva da diretoria). */
+export function canManageMemberRoles(viewer: Viewer) {
+  return viewer.role === "diretoria";
+}
+
 /** Quem resolve uma requisição depende de quem a analisa. */
 export function canResolveRequest(viewer: Viewer, request: Pick<ResourceRequest, "eixo" | "reviewer">) {
-  return request.reviewer === "diretoria" ? canReviewDirectorRequests(viewer) : canReviewEixoRequests(viewer, request.eixo);
+  return request.reviewer === "diretoria"
+    ? canReviewDirectorRequests(viewer)
+    : canReviewEixoRequests(viewer, request.eixo);
 }
 
 /** Para onde vai a requisição de quem pede. Diretoria não faz requisições. */
@@ -61,7 +73,11 @@ export function canViewMemberEvaluations(viewer: Viewer, member: Pick<Member, "e
 }
 
 /** Coordenação do eixo altera qualquer tarefa; o responsável altera só o status da própria. */
-export function canUpdateTaskStatus(viewer: ViewerWithId, project: Pick<Project, "eixo">, task: Pick<Task, "assigneeId">) {
+export function canUpdateTaskStatus(
+  viewer: ViewerWithId,
+  project: Pick<Project, "eixo">,
+  task: Pick<Task, "assigneeId">,
+) {
   return canManageEixo(viewer, project.eixo) || task.assigneeId === viewer.id;
 }
 

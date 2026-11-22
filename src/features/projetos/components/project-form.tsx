@@ -33,7 +33,14 @@ export function ProjectForm({ eixoMembers, project, cancelHref, action, projects
     <form onSubmit={handleSubmit} onChange={handleChange} noValidate className="space-y-4">
       {formError && <Alert tone="danger">{formError}</Alert>}
 
-      <Input id="name" label="Nome do projeto" icon={FolderKanban} placeholder="Ex.: Robô seguidor de linha" defaultValue={project?.name} error={errors.name} />
+      <Input
+        id="name"
+        label="Nome do projeto"
+        icon={FolderKanban}
+        placeholder="Ex.: Robô seguidor de linha"
+        defaultValue={project?.name}
+        error={errors.name}
+      />
       <Textarea
         id="description"
         label="Descrição (opcional)"
@@ -53,8 +60,22 @@ export function ProjectForm({ eixoMembers, project, cancelHref, action, projects
         error={errors.status}
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input id="startDate" type="date" label="Início" icon={CalendarDays} defaultValue={project?.startDate} error={errors.startDate} />
-        <Input id="deadline" type="date" label="Prazo final" icon={CalendarClock} defaultValue={project?.deadline} error={errors.deadline} />
+        <Input
+          id="startDate"
+          type="date"
+          label="Início"
+          icon={CalendarDays}
+          defaultValue={project?.startDate}
+          error={errors.startDate}
+        />
+        <Input
+          id="deadline"
+          type="date"
+          label="Prazo final"
+          icon={CalendarClock}
+          defaultValue={project?.deadline}
+          error={errors.deadline}
+        />
       </div>
       <CheckboxGroup
         name="memberIds"

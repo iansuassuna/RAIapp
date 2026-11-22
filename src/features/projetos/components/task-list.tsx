@@ -56,7 +56,11 @@ export function TaskList({ project, memberNames, viewerId, canManage, purchaseRo
                     <Badge tone={TASK_STATUS_TONE[task.status]}>{TASK_STATUS_LABEL[task.status]}</Badge>
                   )}
                   {canManage && (
-                    <ConfirmButton onConfirm={deleteTaskAction.bind(null, project.id, task.id)} confirmLabel="Excluir" aria-label={`Excluir ${task.title}`}>
+                    <ConfirmButton
+                      onConfirm={deleteTaskAction.bind(null, project.id, task.id)}
+                      confirmLabel="Excluir"
+                      aria-label={`Excluir ${task.title}`}
+                    >
                       <Trash2 className="size-4" aria-hidden />
                     </ConfirmButton>
                   )}

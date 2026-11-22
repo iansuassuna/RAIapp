@@ -1,4 +1,4 @@
-import { ArrowRight, FilePlus2, FilePen, FileX2, type LucideIcon } from "lucide-react";
+import { ArrowRight, FilePen, FilePlus2, FileX2, type LucideIcon } from "lucide-react";
 import { Badge, Card, DecisionForm, EmptyState, SectionTitle } from "@/components/ui";
 import { eixoLabel } from "@/config/options";
 import { cabinetLabel } from "@/config/requests";
@@ -38,7 +38,9 @@ function changes(before: InventoryItem, after: NonNullable<InventoryProposal["da
   if (before.category !== after.category) out.push(`categoria: ${before.category} → ${after.category}`);
   if (before.cabinet !== after.cabinet) out.push(`${cabinetLabel(before.cabinet)} → ${cabinetLabel(after.cabinet)}`);
   if (before.ownerEixo !== after.ownerEixo)
-    out.push(`dono: ${before.ownerEixo ? eixoLabel(before.ownerEixo) : "sem propriedade"} → ${after.ownerEixo ? eixoLabel(after.ownerEixo) : "sem propriedade"}`);
+    out.push(
+      `dono: ${before.ownerEixo ? eixoLabel(before.ownerEixo) : "sem propriedade"} → ${after.ownerEixo ? eixoLabel(after.ownerEixo) : "sem propriedade"}`,
+    );
   if (before.total !== after.total) out.push(`quantidade: ${before.total} → ${after.total}`);
   return out.length ? out : ["sem mudanças"];
 }
@@ -60,7 +62,13 @@ export function ProposalList({ proposals, items, memberNames, title, canDecide, 
               const { label, icon: Icon } = ACTION[p.action];
               const item = p.itemId ? items[p.itemId] : undefined;
               const lines =
-                p.action === "criar" ? [describe(p.data!)] : p.action === "excluir" ? [item ? describe(item) : "Item removido"] : item ? changes(item, p.data!) : ["Item removido"];
+                p.action === "criar"
+                  ? [describe(p.data!)]
+                  : p.action === "excluir"
+                    ? [item ? describe(item) : "Item removido"]
+                    : item
+                      ? changes(item, p.data!)
+                      : ["Item removido"];
               return (
                 <li key={p.id} className="space-y-3 px-3 py-4">
                   <div className="flex items-start gap-3">

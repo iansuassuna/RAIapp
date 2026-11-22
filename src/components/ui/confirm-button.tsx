@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 import { Button } from "./button";
 
 type Props = {
   /** Ação executada depois da confirmação. */
-  onConfirm: () => Promise<unknown> | void;
+  onConfirm: () => unknown;
   children: ReactNode;
   confirmLabel?: string;
   size?: "sm" | "md";
@@ -14,13 +14,27 @@ type Props = {
 };
 
 /** Botão destrutivo em dois passos (sem `confirm()` do navegador): 1º clique pede confirmação, 2º executa. */
-export function ConfirmButton({ onConfirm, children, confirmLabel = "Confirmar exclusão", size = "sm", className, ...rest }: Props) {
+export function ConfirmButton({
+  onConfirm,
+  children,
+  confirmLabel = "Confirmar exclusão",
+  size = "sm",
+  className,
+  ...rest
+}: Props) {
   const [armed, setArmed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   if (!armed) {
     return (
-      <Button type="button" variant="ghost" size={size} className={className} onClick={() => setArmed(true)} aria-label={rest["aria-label"]}>
+      <Button
+        type="button"
+        variant="ghost"
+        size={size}
+        className={className}
+        onClick={() => setArmed(true)}
+        aria-label={rest["aria-label"]}
+      >
         {children}
       </Button>
     );
@@ -32,7 +46,12 @@ export function ConfirmButton({ onConfirm, children, confirmLabel = "Confirmar e
         variant="danger"
         size={size}
         loading={pending}
-        onClick={() => startTransition(async () => { await onConfirm(); setArmed(false); })}
+        onClick={() =>
+          startTransition(async () => {
+            await onConfirm();
+            setArmed(false);
+          })
+        }
       >
         {confirmLabel}
       </Button>

@@ -50,10 +50,23 @@ export function DecisionForm({
         className="w-full resize-none rounded-lg bg-surface px-3 py-2 text-sm text-ink ring-1 ring-line placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-accent-500"
       />
       <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="danger" size="sm" loading={pending && decision === reject.value} disabled={pending} onClick={() => submit(reject.value)}>
+        <Button
+          type="button"
+          variant="danger"
+          size="sm"
+          loading={pending && decision === reject.value}
+          disabled={pending}
+          onClick={() => submit(reject.value)}
+        >
           <X className="size-4" aria-hidden /> {reject.label}
         </Button>
-        <Button type="button" size="sm" loading={pending && decision === approve.value} disabled={pending} onClick={() => submit(approve.value)}>
+        <Button
+          type="button"
+          size="sm"
+          loading={pending && decision === approve.value}
+          disabled={pending}
+          onClick={() => submit(approve.value)}
+        >
           <Check className="size-4" aria-hidden /> {approve.label}
         </Button>
       </div>

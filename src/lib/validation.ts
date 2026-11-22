@@ -38,7 +38,10 @@ export const isoDate = (message: string) => z.string({ error: message }).regex(/
 
 /** Texto opcional: "" vira undefined. */
 export const optionalText = (max: number, message: string) =>
-  z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), z.string().trim().max(max, message).optional());
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().trim().max(max, message).optional(),
+  );
 
 /** Resultado padrão quando o schema falha (Server Actions revalidam tudo que vem do cliente). */
 export function invalidResult(error: z.ZodError): ActionResult {

@@ -1,7 +1,17 @@
+import { and, asc, eq, inArray, notInArray } from "drizzle-orm";
+import { type DbOrTx, db, newId } from "@/db";
+import {
+  inventoryItems,
+  projectComponents,
+  projectMembers,
+  projects,
+  resourceRequests,
+  tasks,
+  user,
+} from "@/db/schema";
 import type { ActionResult, Eixo, Member, Project, ProjectStatus, Task, TaskStatus } from "@/types";
 import { canManageProjects, canRequestForProject, canUpdateTaskStatus, canViewEixo } from "../access";
-import { getDb, newId } from "../db";
-import { usedQuantity } from "./inventory";
+import { allocateToProject, usedQuantity } from "./inventory";
 import { denied, notFound } from "./shared";
 
 export type ProjectInput = {
@@ -20,147 +30,330 @@ export function projectProgress(project: Pick<Project, "tasks">) {
   return { done, total: project.tasks.length };
 }
 
+/* ---------- Hidratação em lote (sem N+1) ---------- */
+
+async function hydrateProjects(rows: (typeof projects.$inferSelect)[], tx: DbOrTx = db): Promise<Project[]> {
+  if (rows.length === 0) return [];
+  const ids = rows.map((p) => p.id);
+
+  const [memberRows, taskRows, componentRows] = await Promise.all([
+    tx.select().from(projectMembers).where(inArray(projectMembers.projectId, ids)),
+    tx.select().from(tasks).where(inArray(tasks.projectId, ids)).orderBy(asc(tasks.deadline), asc(tasks.createdAt)),
+    tx.select().from(projectComponents).where(inArray(projectComponents.projectId, ids)),
+  ]);
+
+  const membersByProject = new Map<string, string[]>();
+  for (const m of memberRows) {
+    const list = membersByProject.get(m.projectId) ?? [];
+    list.push(m.memberId);
+    membersByProject.set(m.projectId, list);
+  }
+
+  const tasksByProject = new Map<string, Task[]>();
+  for (const t of taskRows) {
+    const list = tasksByProject.get(t.projectId) ?? [];
+    list.push({ id: t.id, title: t.title, assigneeId: t.assigneeId, deadline: t.deadline, status: t.status });
+    tasksByProject.set(t.projectId, list);
+  }
+
+  const componentsByProject = new Map<string, { componentId: string; quantity: number }[]>();
+  for (const c of componentRows) {
+    const list = componentsByProject.get(c.projectId) ?? [];
+    list.push({ componentId: c.componentId, quantity: c.quantity });
+    componentsByProject.set(c.projectId, list);
+  }
+
+  return rows.map((p) => ({
+    id: p.id,
+    eixo: p.eixo,
+    name: p.name,
+    description: p.description,
+    status: p.status,
+    startDate: p.startDate,
+    deadline: p.deadline,
+    memberIds: membersByProject.get(p.id) ?? [],
+    tasks: tasksByProject.get(p.id) ?? [],
+    components: componentsByProject.get(p.id) ?? [],
+  }));
+}
+
 /* ---------- Leitura ---------- */
 
 export async function getEixoProjects(viewer: Member, eixo: Eixo): Promise<Project[] | null> {
   if (!canViewEixo(viewer, eixo)) return null;
-  return getDb()
-    .projects.filter((p) => p.eixo === eixo)
-    .sort((a, b) => a.deadline.localeCompare(b.deadline));
+  const rows = await db.select().from(projects).where(eq(projects.eixo, eixo)).orderBy(asc(projects.deadline));
+  return hydrateProjects(rows);
 }
 
 /** Projeto do eixo informado. `project: null` = não existe nesse eixo; `allowed: false` = sem acesso (página chama forbidden()). */
 export async function getProject(viewer: Member, eixo: Eixo, projectId: string) {
-  const project = getDb().projects.find((p) => p.id === projectId && p.eixo === eixo);
-  if (!project) return { project: null, allowed: true } as const;
-  return { project, allowed: canViewEixo(viewer, eixo) } as const;
+  const [row] = await db
+    .select()
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.eixo, eixo)))
+    .limit(1);
+  if (!row) return { project: null, allowed: true } as const;
+  if (!canViewEixo(viewer, eixo)) return { project: null, allowed: false } as const;
+  const [hydrated] = await hydrateProjects([row]);
+  return { project: hydrated ?? null, allowed: true } as const;
 }
 
 /** Projetos que o membro pode vincular a uma requisição (afiliados; coordenador: todos do eixo). */
-export async function getRequestableProjects(viewer: Member) {
-  return getDb()
-    .projects.filter((p) => canRequestForProject(viewer, p))
-    .sort((a, b) => a.name.localeCompare(b.name));
+export async function getRequestableProjects(viewer: Member): Promise<Project[]> {
+  if (!viewer.eixo) return [];
+  const rows = await db.select().from(projects).where(eq(projects.eixo, viewer.eixo)).orderBy(asc(projects.name));
+  const hydrated = await hydrateProjects(rows);
+  return hydrated.filter((p) => canRequestForProject(viewer, p));
 }
 
 /** Projetos em que o membro está afiliado. */
-export async function getMemberProjects(viewer: Member) {
-  return getDb()
-    .projects.filter((p) => p.memberIds.includes(viewer.id))
-    .sort((a, b) => a.deadline.localeCompare(b.deadline));
+export async function getMemberProjects(viewer: Member): Promise<Project[]> {
+  const links = await db
+    .select({ projectId: projectMembers.projectId })
+    .from(projectMembers)
+    .where(eq(projectMembers.memberId, viewer.id));
+  const projectIds = links.map((l) => l.projectId);
+  if (projectIds.length === 0) return [];
+  const rows = await db.select().from(projects).where(inArray(projects.id, projectIds)).orderBy(asc(projects.deadline));
+  return hydrateProjects(rows);
 }
 
 /** Tarefas atribuídas ao membro, com o projeto de cada uma, ordenadas por prazo. */
-export async function getAssignedTasks(viewer: Member) {
-  return getDb()
-    .projects.flatMap((project) => project.tasks.filter((t) => t.assigneeId === viewer.id).map((task) => ({ task, project })))
-    .sort((a, b) => a.task.deadline.localeCompare(b.task.deadline));
+export async function getAssignedTasks(viewer: Member): Promise<{ task: Task; project: Project }[]> {
+  const myTasks = await db.select().from(tasks).where(eq(tasks.assigneeId, viewer.id)).orderBy(asc(tasks.deadline));
+  if (myTasks.length === 0) return [];
+  const projectIds = [...new Set(myTasks.map((t) => t.projectId))];
+  const projectRows = await db.select().from(projects).where(inArray(projects.id, projectIds));
+  const hydrated = await hydrateProjects(projectRows);
+  const byId = new Map(hydrated.map((p) => [p.id, p]));
+
+  return myTasks
+    .map((t) => {
+      const project = byId.get(t.projectId);
+      if (!project) return null;
+      const task: Task = {
+        id: t.id,
+        title: t.title,
+        assigneeId: t.assigneeId,
+        deadline: t.deadline,
+        status: t.status,
+      };
+      return { task, project };
+    })
+    .filter((entry): entry is { task: Task; project: Project } => entry !== null);
 }
 
 /* ---------- Escrita (coordenação do eixo) ---------- */
 
-function validateMembers(eixo: Eixo, memberIds: string[]): ActionResult | null {
-  const db = getDb();
-  const invalid = memberIds.filter((id) => !db.members.some((m) => m.id === id && m.eixo === eixo));
-  return invalid.length ? { ok: false, error: "Só é possível afiliar membros do próprio eixo.", fieldErrors: { memberIds: "Membro inválido." } } : null;
+async function validateMembers(tx: DbOrTx, eixo: Eixo, memberIds: string[]): Promise<ActionResult | null> {
+  const uniqueIds = [...new Set(memberIds)];
+  if (uniqueIds.length === 0) return null;
+  const validRows = await tx
+    .select({ id: user.id })
+    .from(user)
+    .where(and(inArray(user.id, uniqueIds), eq(user.eixo, eixo)));
+  if (validRows.length !== uniqueIds.length) {
+    return {
+      ok: false,
+      error: "Só é possível afiliar membros do próprio eixo.",
+      fieldErrors: { memberIds: "Membro inválido." },
+    };
+  }
+  return null;
 }
 
-export async function createProject(viewer: Member, eixo: Eixo, input: ProjectInput): Promise<ActionResult> {
-  if (!canManageProjects(viewer, eixo)) return denied();
-  const invalid = validateMembers(eixo, input.memberIds);
-  if (invalid) return invalid;
-  const project: Project = {
-    id: newId("p"),
-    eixo,
-    name: input.name,
-    description: input.description ?? "",
-    status: input.status,
-    startDate: input.startDate,
-    deadline: input.deadline,
-    memberIds: input.memberIds,
-    tasks: [],
-    components: [],
-  };
-  getDb().projects.push(project);
-  return { ok: true, id: project.id };
-}
-
-function findManaged(viewer: Member, projectId: string): Project | ActionResult {
-  const project = getDb().projects.find((p) => p.id === projectId);
+async function findManaged(
+  tx: DbOrTx,
+  viewer: Member,
+  projectId: string,
+): Promise<{ id: string; eixo: Eixo } | ActionResult> {
+  const [project] = await tx
+    .select({ id: projects.id, eixo: projects.eixo })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
   if (!project) return notFound("Projeto");
   if (!canManageProjects(viewer, project.eixo)) return denied();
   return project;
 }
-const isResult = (x: Project | ActionResult): x is ActionResult => "ok" in x;
+
+const isResult = (x: { id: string; eixo: Eixo } | ActionResult): x is ActionResult => "ok" in x;
+
+export async function createProject(viewer: Member, eixo: Eixo, input: ProjectInput): Promise<ActionResult> {
+  if (!canManageProjects(viewer, eixo)) return denied();
+  return db.transaction(async (tx) => {
+    const invalid = await validateMembers(tx, eixo, input.memberIds);
+    if (invalid) return invalid;
+
+    const id = newId("p");
+    await tx.insert(projects).values({
+      id,
+      eixo,
+      name: input.name,
+      description: input.description ?? "",
+      status: input.status,
+      startDate: input.startDate,
+      deadline: input.deadline,
+    });
+
+    const uniqueMembers = [...new Set(input.memberIds)];
+    if (uniqueMembers.length > 0) {
+      await tx.insert(projectMembers).values(uniqueMembers.map((memberId) => ({ projectId: id, memberId })));
+    }
+    return { ok: true, id };
+  });
+}
 
 export async function updateProject(viewer: Member, projectId: string, input: ProjectInput): Promise<ActionResult> {
-  const project = findManaged(viewer, projectId);
-  if (isResult(project)) return project;
-  const invalid = validateMembers(project.eixo, input.memberIds);
-  if (invalid) return invalid;
-  Object.assign(project, { ...input, description: input.description ?? "" });
-  // Tarefas de quem saiu do projeto ficam sem responsável.
-  for (const t of project.tasks) if (t.assigneeId && !project.memberIds.includes(t.assigneeId)) t.assigneeId = null;
-  return { ok: true, id: project.id };
+  return db.transaction(async (tx) => {
+    const project = await findManaged(tx, viewer, projectId);
+    if (isResult(project)) return project;
+
+    const invalid = await validateMembers(tx, project.eixo, input.memberIds);
+    if (invalid) return invalid;
+
+    await tx
+      .update(projects)
+      .set({
+        name: input.name,
+        description: input.description ?? "",
+        status: input.status,
+        startDate: input.startDate,
+        deadline: input.deadline,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, projectId));
+
+    const uniqueMembers = [...new Set(input.memberIds)];
+    await tx.delete(projectMembers).where(eq(projectMembers.projectId, projectId));
+    if (uniqueMembers.length > 0) {
+      await tx.insert(projectMembers).values(uniqueMembers.map((memberId) => ({ projectId, memberId })));
+      // Tarefas de quem saiu do projeto ficam sem responsável.
+      await tx
+        .update(tasks)
+        .set({ assigneeId: null })
+        .where(and(eq(tasks.projectId, projectId), notInArray(tasks.assigneeId, uniqueMembers)));
+    } else {
+      await tx.update(tasks).set({ assigneeId: null }).where(eq(tasks.projectId, projectId));
+    }
+
+    return { ok: true, id: projectId };
+  });
 }
 
 export async function deleteProject(viewer: Member, projectId: string): Promise<ActionResult> {
-  const project = findManaged(viewer, projectId);
-  if (isResult(project)) return project;
-  const db = getDb();
-  db.projects = db.projects.filter((p) => p.id !== projectId);
-  // Requisições pendentes do projeto deixam de apontar para ele.
-  for (const r of db.requests) if (r.projectId === projectId) r.projectId = null;
-  return { ok: true };
+  return db.transaction(async (tx) => {
+    const project = await findManaged(tx, viewer, projectId);
+    if (isResult(project)) return project;
+
+    await tx.update(resourceRequests).set({ projectId: null }).where(eq(resourceRequests.projectId, projectId));
+    await tx.delete(projects).where(eq(projects.id, projectId));
+    return { ok: true };
+  });
 }
 
 export async function addTask(viewer: Member, projectId: string, input: TaskInput): Promise<ActionResult> {
-  const project = findManaged(viewer, projectId);
-  if (isResult(project)) return project;
-  const assigneeId = input.assigneeId || null;
-  if (assigneeId && !project.memberIds.includes(assigneeId)) {
-    return { ok: false, error: "O responsável precisa estar afiliado ao projeto.", fieldErrors: { assigneeId: "Escolha um membro do projeto." } };
-  }
-  const task: Task = { id: newId("t"), title: input.title, assigneeId, deadline: input.deadline, status: "a-fazer" };
-  project.tasks.push(task);
-  return { ok: true, id: task.id };
+  return db.transaction(async (tx) => {
+    const project = await findManaged(tx, viewer, projectId);
+    if (isResult(project)) return project;
+
+    const assigneeId = input.assigneeId || null;
+    if (assigneeId) {
+      const [memberLink] = await tx
+        .select({ memberId: projectMembers.memberId })
+        .from(projectMembers)
+        .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.memberId, assigneeId)))
+        .limit(1);
+      if (!memberLink) {
+        return {
+          ok: false,
+          error: "O responsável precisa estar afiliado ao projeto.",
+          fieldErrors: { assigneeId: "Escolha um membro do projeto." },
+        };
+      }
+    }
+
+    const id = newId("t");
+    await tx.insert(tasks).values({
+      id,
+      projectId,
+      title: input.title,
+      assigneeId,
+      deadline: input.deadline,
+      status: "a-fazer",
+    });
+    return { ok: true, id };
+  });
 }
 
 export async function deleteTask(viewer: Member, projectId: string, taskId: string): Promise<ActionResult> {
-  const project = findManaged(viewer, projectId);
-  if (isResult(project)) return project;
-  project.tasks = project.tasks.filter((t) => t.id !== taskId);
-  return { ok: true };
+  return db.transaction(async (tx) => {
+    const project = await findManaged(tx, viewer, projectId);
+    if (isResult(project)) return project;
+    await tx.delete(tasks).where(and(eq(tasks.id, taskId), eq(tasks.projectId, projectId)));
+    return { ok: true };
+  });
 }
 
 /** Coordenação ou o responsável pela tarefa. */
-export async function updateTaskStatus(viewer: Member, projectId: string, taskId: string, status: TaskStatus): Promise<ActionResult> {
-  const project = getDb().projects.find((p) => p.id === projectId);
-  const task = project?.tasks.find((t) => t.id === taskId);
-  if (!project || !task) return notFound("Tarefa");
-  if (!canUpdateTaskStatus(viewer, project, task)) return denied();
-  task.status = status;
+export async function updateTaskStatus(
+  viewer: Member,
+  projectId: string,
+  taskId: string,
+  status: TaskStatus,
+): Promise<ActionResult> {
+  const [row] = await db
+    .select({
+      taskId: tasks.id,
+      assigneeId: tasks.assigneeId,
+      eixo: projects.eixo,
+    })
+    .from(tasks)
+    .innerJoin(projects, eq(tasks.projectId, projects.id))
+    .where(and(eq(tasks.id, taskId), eq(tasks.projectId, projectId)))
+    .limit(1);
+
+  if (!row) return notFound("Tarefa");
+  if (!canUpdateTaskStatus(viewer, { eixo: row.eixo }, { assigneeId: row.assigneeId })) return denied();
+
+  await db.update(tasks).set({ status }).where(eq(tasks.id, taskId));
   return { ok: true };
 }
 
-export async function allocateComponent(viewer: Member, projectId: string, componentId: string, quantity: number): Promise<ActionResult> {
-  const project = findManaged(viewer, projectId);
-  if (isResult(project)) return project;
-  const item = getDb().inventory.find((i) => i.id === componentId);
-  if (!item) return notFound("Componente");
-  const available = item.total - usedQuantity(componentId);
-  if (quantity > available) {
-    return { ok: false, error: `Só há ${available} unidade(s) disponível(is) de ${item.name}.`, fieldErrors: { quantity: `Máximo: ${available}.` } };
-  }
-  const existing = project.components.find((c) => c.componentId === componentId);
-  if (existing) existing.quantity += quantity;
-  else project.components.push({ componentId, quantity });
-  return { ok: true };
+export async function allocateComponent(
+  viewer: Member,
+  projectId: string,
+  componentId: string,
+  quantity: number,
+): Promise<ActionResult> {
+  return db.transaction(async (tx) => {
+    const project = await findManaged(tx, viewer, projectId);
+    if (isResult(project)) return project;
+
+    const [item] = await tx.select().from(inventoryItems).where(eq(inventoryItems.id, componentId)).limit(1);
+    if (!item) return notFound("Componente");
+
+    const available = item.total - (await usedQuantity(componentId, tx));
+    if (quantity > available) {
+      return {
+        ok: false,
+        error: `Só há ${available} unidade(s) disponível(is) de ${item.name}.`,
+        fieldErrors: { quantity: `Máximo: ${available}.` },
+      };
+    }
+
+    await allocateToProject(tx, projectId, componentId, quantity);
+    return { ok: true };
+  });
 }
 
 export async function removeComponent(viewer: Member, projectId: string, componentId: string): Promise<ActionResult> {
-  const project = findManaged(viewer, projectId);
-  if (isResult(project)) return project;
-  project.components = project.components.filter((c) => c.componentId !== componentId);
-  return { ok: true };
+  return db.transaction(async (tx) => {
+    const project = await findManaged(tx, viewer, projectId);
+    if (isResult(project)) return project;
+    await tx
+      .delete(projectComponents)
+      .where(and(eq(projectComponents.projectId, projectId), eq(projectComponents.componentId, componentId)));
+    return { ok: true };
+  });
 }
