@@ -38,6 +38,7 @@ export default async function EixoLayout({
     tabs.push({
       href: `${base}/painel`,
       label: "Painel da Coordenação",
+      shortLabel: "Painel",
       count: pendingRequests + panelProposals.length,
     });
   }

@@ -18,7 +18,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # Aplica as migrations do Drizzle e encerra; o `app` só sobe depois que ele termina com sucesso.
+  migrate:
+    image: raiapp-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: "no"
+    command: ["bun", "src/db/migrate.ts"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-raiapp}:${POSTGRES_PASSWORD:-raiapp}@postgres:5432/${POSTGRES_DB:-raiapp}
+
   app:
+    image: raiapp-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -27,6 +42,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DATABASE_URL: postgres://${POSTGRES_USER:-raiapp}:${POSTGRES_PASSWORD:-raiapp}@postgres:5432/${POSTGRES_DB:-raiapp}

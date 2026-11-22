@@ -24,6 +24,14 @@ bun run dev            # http://localhost:3000
 docker compose up --build
 ```
 
+O serviço `migrate` aplica as migrations (`bun src/db/migrate.ts`) e encerra; o `app` só sobe depois dele. Para popular os dados iniciais no banco do container:
+
+```bash
+docker compose run --rm app bun src/db/seed.ts
+```
+
+> Variáveis exportadas no shell (ex.: `DATABASE_URL`) **têm precedência sobre o `.env`**. Confira `echo $DATABASE_URL` antes de rodar `db:migrate`/`db:seed` para não atingir o banco errado.
+
 ## Autenticação e Modo de Desenvolvimento Rápido
 
 - A autenticação é gerenciada pelo **Better Auth** (`/api/auth/[...all]`, sessões persistidas no PostgreSQL, cookies HTTP-only assinados e proteção via `src/proxy.ts` + `src/lib/session.ts`).

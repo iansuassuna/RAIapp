@@ -14,6 +14,7 @@ import {
   canViewEixo,
   canViewMemberEvaluations,
   getAccessibleEixos,
+  hasMemberArea,
   requestReviewerFor,
 } from "./access";
 
@@ -111,5 +112,13 @@ describe("inventário", () => {
     expect(canApproveInventoryProposal(coordSaude, "inovacao")).toBe(false);
     expect(assignableOwners(coordInovacao)).toEqual([null, "inovacao"]);
     expect(assignableOwners(membroProcessos)).toEqual([null, "inovacao", "tecnico-sustentavel", "tecnologias-saude"]);
+  });
+});
+
+describe("minha área", () => {
+  test("membros e coordenação têm Minha área; diretoria não", () => {
+    expect(hasMemberArea(membroMidias)).toBe(true);
+    expect(hasMemberArea({ role: "coordenador", eixo: "inovacao" })).toBe(true);
+    expect(hasMemberArea({ role: "diretoria", eixo: null })).toBe(false);
   });
 });

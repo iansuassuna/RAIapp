@@ -57,6 +57,8 @@ export function RequestForm({ action, inventory, projects }: Props) {
         formRef.current?.reset();
         setNotice(`${REQUEST_KIND_LABEL[data.kind]}: requisição enviada para a coordenação do seu eixo.`);
       }
+      // O aviso (sucesso ou erro) fica no topo do formulário; o botão de envio fica no fim. Traz o aviso à vista.
+      requestAnimationFrame(() => formRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
       return result;
     },
   );

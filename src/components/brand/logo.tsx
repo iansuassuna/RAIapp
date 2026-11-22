@@ -6,7 +6,7 @@ type LogoMarkProps = { className?: string; tone?: "dark" | "light" };
 /** Símbolo RAITec: o "7" sólido + as trilhas de circuito. Recriado em SVG para escalar sem perda. */
 export function LogoMark({ className, tone = "dark" }: LogoMarkProps) {
   const gid = useId();
-  const solid = tone === "dark" ? "var(--color-brand-900)" : "#ffffff";
+  const solid = tone === "dark" ? "var(--color-brand-900)" : "var(--color-surface)";
   const traceEnd = tone === "dark" ? "var(--color-brand-900)" : "var(--color-brand-200)";
   const traces = [0, 1, 2, 3].map((i) => {
     const x = 74 + i * 8;

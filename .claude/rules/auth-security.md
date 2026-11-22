@@ -24,7 +24,8 @@ paths:
 ## Defesa em Profundidade (Next.js 16)
 1. **Camada 1 — `src/proxy.ts`** (substitui `middleware.ts` no Next.js 16):
    - Verificação otimista de presença de cookie via `getSessionCookie(request)` (`better-auth/cookies`).
-   - Redireciona rotas privadas sem cookie para `/login` e rotas públicas (`/login`, `/cadastro`) com cookie para `/dashboard`.
+   - Redireciona rotas privadas sem cookie para `/login`.
+   - **Não** redireciona `/login`/`/cadastro` por presença de cookie: um cookie órfão (sessão expirada/revogada, banco recriado, segredo trocado) causaria loop `/login` ↔ `/dashboard`. Quem já está logado é redirecionado pelo layout `app/(auth)/layout.tsx`, que valida a sessão no banco.
    - Nunca confie apenas no Proxy para segurança de dados.
 2. **Camada 2 — `src/lib/session.ts`**:
    - `getSessionMember()` valida a sessão no banco via `auth.api.getSession({ headers: await headers() })`, deduplicada por request com `React.cache()`.

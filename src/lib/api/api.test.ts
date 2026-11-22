@@ -419,6 +419,44 @@ describe("autenticação (Better Auth)", () => {
     expect(created).toMatchObject({ role: "membro", eixo: "inovacao", time: "processos" });
   });
 
+  test("cadastro direto pela API aplica as regras do formulário (nome, eixo, time) com erro 400", async () => {
+    const attempt = async (body: Record<string, unknown>) => {
+      try {
+        await auth.api.signUpEmail({ body: { password: "senhasegura123", ...body } as never });
+        return null;
+      } catch (error) {
+        return error as { statusCode?: number; body?: { code?: string } };
+      }
+    };
+
+    const shortName = await attempt({ name: " A ", email: "curto@raitec.ufc.br", eixo: "inovacao", time: "midias" });
+    expect(shortName?.statusCode).toBe(400);
+    expect(shortName?.body?.code).toBe("INVALID_SIGN_UP");
+
+    const badEixo = await attempt({ name: "Eixo Ruim", email: "eixo@raitec.ufc.br", eixo: "marte", time: "midias" });
+    expect(badEixo?.statusCode).toBe(400);
+
+    const noTime = await attempt({ name: "Sem Time", email: "time@raitec.ufc.br", eixo: "inovacao" });
+    expect(noTime?.statusCode).toBe(400);
+
+    const rows = await db.select().from(user).where(eq(user.email, "curto@raitec.ufc.br"));
+    expect(rows).toHaveLength(0);
+  });
+
+  test("cadastro grava o nome sem espaços nas pontas", async () => {
+    await auth.api.signUpEmail({
+      body: {
+        name: "  Maria Silva  ",
+        email: "maria@raitec.ufc.br",
+        password: "senhasegura123",
+        eixo: "inovacao",
+        time: "midias",
+      },
+    });
+    const [created] = await db.select().from(user).where(eq(user.email, "maria@raitec.ufc.br"));
+    expect(created?.name).toBe("Maria Silva");
+  });
+
   test("login com credenciais válidas do seed funciona e rejeita senha incorreta", async () => {
     const ok = await auth.api.signInEmail({
       body: { email: "ana@raitec.ufc.br", password: SEED_PASSWORD },

@@ -18,8 +18,8 @@ export default async function DirectorLayout({ children }: { children: React.Rea
       <SectionTabs
         label="Seções da diretoria"
         tabs={[
-          { href: "/diretoria", label: "Pedidos das coordenações", exact: true, count: pending },
-          { href: "/diretoria/membros", label: "Membros e papéis" },
+          { href: "/diretoria", label: "Pedidos das coordenações", shortLabel: "Pedidos", exact: true, count: pending },
+          { href: "/diretoria/membros", label: "Membros e papéis", shortLabel: "Membros" },
         ]}
       />
       <div className="pt-2">{children}</div>

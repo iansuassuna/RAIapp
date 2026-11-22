@@ -86,6 +86,7 @@ function MemberRoleRow({ member, isSelf }: { member: Member; isSelf: boolean }) 
               setEditing((v) => !v);
             }}
             aria-expanded={editing}
+            aria-label={editing ? `Cancelar alteração de ${member.name}` : `Alterar papel de ${member.name}`}
           >
             {editing ? "Cancelar" : "Alterar papel"}
           </Button>

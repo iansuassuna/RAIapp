@@ -32,7 +32,6 @@ export default async function MemberAreaPage() {
         <SectionTitle id="afiliados">Projetos afiliados</SectionTitle>
         <ProjectList
           projects={projects}
-          showEixo={member.role === "diretoria"}
           emptyTitle="Você não está afiliado a projetos"
           emptyText="A coordenação do seu eixo afilia os membros aos projetos."
         />

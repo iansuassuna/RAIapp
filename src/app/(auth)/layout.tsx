@@ -1,7 +1,14 @@
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
+import { getSessionMember } from "@/lib/session";
 
-/** Layout das telas públicas: painel da marca (desktop) + área do formulário. */
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Layout das telas públicas: painel da marca (desktop) + área do formulário.
+ * Quem já tem sessão VÁLIDA no banco vai para o dashboard (cookie órfão não conta).
+ */
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  if (await getSessionMember()) redirect("/dashboard");
+
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
       {/* Painel da marca — só desktop */}

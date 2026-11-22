@@ -43,6 +43,11 @@ export function canReviewDirectorRequests(viewer: Viewer) {
   return viewer.role === "diretoria";
 }
 
+/** "Minha área" (projetos afiliados, tarefas e requisições): membros e coordenação. A diretoria usa `/diretoria`. */
+export function hasMemberArea(viewer: Viewer) {
+  return viewer.role !== "diretoria";
+}
+
 /** Gestão de papéis e vínculos de membros (exclusiva da diretoria). */
 export function canManageMemberRoles(viewer: Viewer) {
   return viewer.role === "diretoria";

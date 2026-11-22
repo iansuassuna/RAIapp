@@ -68,7 +68,9 @@ Fonte única da verdade: `src/lib/access.ts`.
 - **Login (`/login`)**: e-mail + senha via Better Auth (`signInEmail`); erros renderizados inline com `<Alert tone="danger">`.
 - **Logout**: ação server-side (`logoutAction`) que revoga a sessão no banco, limpa o cookie e redireciona para `/login`.
 - **Proteção de rotas**:
-  - `src/proxy.ts` redireciona anônimos em rotas protegidas para `/login` e autenticados em `/login` ou `/cadastro` para `/dashboard`.
+  - `src/proxy.ts` redireciona anônimos (sem cookie de sessão) em rotas protegidas para `/login`.
+  - `app/(auth)/layout.tsx` redireciona para `/dashboard` quem acessa `/login` ou `/cadastro` com sessão **válida no banco** (cookie órfão não causa loop).
+  - O cadastro também é validado no hook `databaseHooks.user.create.before` do Better Auth (nome ≥ 3, `eixo`/`time` válidos), retornando HTTP 400 mesmo em chamadas diretas a `/api/auth/sign-up/email`.
   - `src/lib/session.ts` valida a sessão real no PostgreSQL em todo request autenticado.
   - Acesso autenticado sem permissão dispara `forbidden()` (HTTP 403 → `app/(app)/forbidden.tsx`, via `experimental.authInterrupts: true`).
 - **Modo de desenvolvimento rápido (`DEV_QUICK_SWITCH=true`)**:
@@ -157,7 +159,7 @@ Tabelas auxiliares de métricas/painel (populadas via `seed.ts`): `activities`, 
 
 ## 6. Requisitos Não-Funcionais e Critérios de Aceite
 
-- **Docker**: `docker compose up -d postgres` sobe banco saudável (`healthy`); `docker compose up --build` sobe `postgres` + `app` integrados.
+- **Docker**: `docker compose up -d postgres` sobe banco saudável (`healthy`); `docker compose up --build` sobe `postgres` → `migrate` (aplica migrations e encerra) → `app` integrados.
 - **Qualidade**: `bun run lint` (Biome), `bun run typecheck` (`bun check`), `bun test` e `bun run build` passam com 0 erros.
 - **Persistência**: alterações criadas pela interface (projetos, tarefas, inventário, requisições, avaliações, papéis e novos usuários) sobrevivem ao reinício do servidor e do container.
 - **Segurança**: nenhuma rota de `(app)` é acessível sem sessão válida; nenhuma escalação de papel é possível pelo `/cadastro`; mutações financeiras/estoque/papéis são atômicas em transação.
