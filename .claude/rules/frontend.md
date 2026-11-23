@@ -99,6 +99,7 @@ Nunca use hex solto em componente; se faltar cor, crie token.
 |---|---|
 | `Button` | `variant` primary · accent · secondary · ghost · link; `size` sm · md · lg; `block`, `loading` |
 | `Input`, `PasswordInput`, `Select`, `Textarea` | campos com rótulo interno + ícone lucide obrigatório; `error`/`hint` acessíveis (`FieldShell`) |
+| `DateInput` | data em **dd/mm/aaaa** (máscara + calendário próprio em pt-BR); envia ISO `AAAA-MM-DD` no `name`. **Nunca use `<input type="date">`**: o formato nativo segue o idioma do navegador |
 | `Card`, `SectionTitle` | contêiner branco (`p-2` para listas) e título de seção |
 | `Badge` | `tone` success · warning · danger · brand · accent (tons vêm de `*_TONE`) |
 | `Progress` | `tone="dark"` sobre fundo escuro, `tone="light"` sobre card branco; sempre `label` |
@@ -122,5 +123,6 @@ Variantes com `cva`; sempre aceite `className` e combine com `cn()`.
 - Cada feature com escrita tem `actions.ts` com `"use server"`, usando `src/lib/action-helpers.ts` (autenticação via `getSessionMember()`, validação Zod, chamada a `lib/api`, `revalidatePath("/", "layout")`).
 - Formulários usam `useFormSubmit(schema, onValid)` de `@/lib/form`, exibem `formError` com `<Alert tone="danger">`, e `<form onSubmit={handleSubmit} onChange={handleChange} noValidate>`.
 - Exclusões usam `ConfirmButton` (dois cliques, sem `confirm()`).
+- Datas: campos com `DateInput`; exibição com `formatShortDate` (dd/mm/aaaa) / `formatDateTime` (dd/mm/aaaa às hh:mm, fuso de Fortaleza). Conversões em `lib/date-br.ts`.
 - Ícones decorativos com `aria-hidden`; botões só com ícone com `aria-label`; alvos de toque ≥ 40px (`h-11`).
 - Após mudar telas: `bun run lint`, `bun run typecheck`, `bun test`, `bun run build` e conferência desktop + mobile (~390px).

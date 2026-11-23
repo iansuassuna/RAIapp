@@ -20,7 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { Alert, Button, Card, Input, Select, Textarea } from "@/components/ui";
+import { Alert, Button, Card, DateInput, Input, Select, Textarea } from "@/components/ui";
 import { eixoLabel } from "@/config/options";
 import { cabinetLabel, MEMBER_REQUEST_KINDS, REQUEST_KIND_HINT, REQUEST_KIND_LABEL, ROOMS } from "@/config/requests";
 import { cn } from "@/lib/cn";
@@ -137,7 +137,7 @@ export function RequestForm({ action, inventory, projects }: Props) {
 
         {kind === "reuniao" && (
           <div className="grid gap-4 sm:grid-cols-3">
-            <Input id="date" type="date" label="Data" icon={CalendarDays} error={errors.date} />
+            <DateInput id="date" label="Data" icon={CalendarDays} error={errors.date} />
             <Input id="time" type="time" label="Horário" icon={Clock} error={errors.time} />
             <Select
               id="room"
@@ -152,8 +152,8 @@ export function RequestForm({ action, inventory, projects }: Props) {
 
         {kind === "autorizacao" && (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input id="startDate" type="date" label="Data de início" icon={CalendarDays} error={errors.startDate} />
-            <Input id="endDate" type="date" label="Data de expiração" icon={CalendarClock} error={errors.endDate} />
+            <DateInput id="startDate" label="Data de início" icon={CalendarDays} error={errors.startDate} />
+            <DateInput id="endDate" label="Data de expiração" icon={CalendarClock} error={errors.endDate} />
           </div>
         )}
 
@@ -169,13 +169,7 @@ export function RequestForm({ action, inventory, projects }: Props) {
                 icon={Banknote}
                 error={errors.amount}
               />
-              <Input
-                id="deadline"
-                type="date"
-                label="Prazo de confecção"
-                icon={CalendarClock}
-                error={errors.deadline}
-              />
+              <DateInput id="deadline" label="Prazo de confecção" icon={CalendarClock} error={errors.deadline} />
             </div>
             <Textarea
               id="usage"
@@ -211,13 +205,7 @@ export function RequestForm({ action, inventory, projects }: Props) {
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                id="deadline"
-                type="date"
-                label="Prazo de confecção"
-                icon={CalendarClock}
-                error={errors.deadline}
-              />
+              <DateInput id="deadline" label="Prazo de confecção" icon={CalendarClock} error={errors.deadline} />
               <Input
                 id="estimatedValue"
                 type="number"
@@ -242,7 +230,7 @@ export function RequestForm({ action, inventory, projects }: Props) {
               maxLength={500}
               error={errors.explanation}
             />
-            <Input id="date" type="date" label="Data / prazo (opcional)" icon={CalendarDays} error={errors.date} />
+            <DateInput id="date" label="Data / prazo (opcional)" icon={CalendarDays} error={errors.date} />
           </>
         )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Check, Flag, Shapes, Star, Type } from "lucide-react";
-import { Alert, Button, Input, Select } from "@/components/ui";
+import { Alert, Button, DateInput, Input, Select } from "@/components/ui";
 import {
   ACTIVITY_MAX_POINTS,
   ACTIVITY_STATUS_LABEL,
@@ -66,10 +66,9 @@ export function ActivityForm({ memberId, activity, onDone, onCancel }: Props) {
           defaultValue={activity?.type ?? "capacitacao"}
           error={errors.type}
         />
-        <Input
+        <DateInput
           id={`${prefix}-date`}
           name="date"
-          type="date"
           label="Data"
           icon={CalendarDays}
           defaultValue={activity?.date ?? todayIso()}

@@ -2,7 +2,7 @@
 
 import { CalendarClock, ListPlus, Plus, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
-import { Alert, Button, Card, Input, Select } from "@/components/ui";
+import { Alert, Button, Card, DateInput, Input, Select } from "@/components/ui";
 import { useFormSubmit } from "@/lib/form";
 import type { ActionResult } from "@/types";
 import { taskSchema } from "../schemas";
@@ -42,7 +42,7 @@ export function TaskForm({ action, members }: Props) {
             options={members}
             error={errors.assigneeId}
           />
-          <Input id="deadline" type="date" label="Prazo" icon={CalendarClock} error={errors.deadline} />
+          <DateInput id="deadline" label="Prazo" icon={CalendarClock} error={errors.deadline} />
         </div>
         <div className="flex justify-end">
           <Button type="submit" loading={loading}>

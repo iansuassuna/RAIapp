@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { describeUserAgent, formatIpAddress } from "./format";
+import { cycleDeadlineText, describeUserAgent, formatDateTime, formatIpAddress, formatShortDate } from "./format";
 
 describe("describeUserAgent", () => {
   test.each([
@@ -34,5 +34,17 @@ describe("formatIpAddress", () => {
     expect(formatIpAddress(null)).toBeNull();
     expect(formatIpAddress("0000:0000:0000:0000:0000:0000:0000:0000")).toBeNull();
     expect(formatIpAddress("0.0.0.0")).toBeNull();
+  });
+});
+
+describe("datas exibidas em dd/mm/aaaa", () => {
+  test("data curta e data com hora (Fortaleza)", () => {
+    expect(formatShortDate("2026-11-23")).toBe("23/11/2026");
+    expect(formatShortDate("2027-01-05")).toBe("05/01/2027");
+    expect(formatDateTime("2026-11-23T04:10:00.000Z")).toBe("23/11/2026 às 01:10");
+  });
+
+  test("prazo do ciclo mostra só dia/mês", () => {
+    expect(cycleDeadlineText(7, "2026-11-30")).toBe("encerra em 7 dias (30/11)");
   });
 });

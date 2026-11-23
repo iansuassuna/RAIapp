@@ -1,9 +1,9 @@
-/** Formata datas no padrão curto usado no app: 27/10/26 */
+/** Formata datas no padrão usado no app: 27/10/2026 (dd/mm/aaaa). */
 export function formatShortDate(iso: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
-    year: "2-digit",
+    year: "numeric",
     timeZone: "UTC",
   }).format(new Date(iso));
 }
@@ -41,12 +41,12 @@ export function isOverdue(item: { deadline: string; status: string }) {
   return item.status !== "concluida" && item.status !== "concluido" && item.deadline < todayIso();
 }
 
-/** Data e hora curtas: 14/11/26 às 10:20 */
+/** Data e hora: 14/11/2026 às 10:20 (fuso de Fortaleza). */
 export function formatDateTime(iso: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
-    year: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Fortaleza",
