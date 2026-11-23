@@ -18,6 +18,7 @@ import {
   activityStatusEnum,
   activityTypeEnum,
   eixoEnum,
+  notificationTypeEnum,
   projectStatusEnum,
   proposalActionEnum,
   proposalStatusEnum,
@@ -318,4 +319,30 @@ export const eixoGoals = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [index("eixo_goals_eixo_idx").on(table.eixo)],
+);
+
+/* ---------- Notificações ---------- */
+
+/**
+ * Central de notificações. Gravadas na MESMA transação do evento que as gera (`notify()` em
+ * `lib/api/notifications.ts`) e entregues em tempo real via `pg_notify` + SSE após o commit.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id").primaryKey(),
+    recipientId: text("recipient_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    href: text("href"),
+    readAt: timestamp("read_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("notifications_recipient_created_idx").on(table.recipientId, table.createdAt),
+    index("notifications_unread_idx").on(table.recipientId).where(sql`${table.readAt} is null`),
+  ],
 );

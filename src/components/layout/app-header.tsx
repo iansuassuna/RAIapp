@@ -3,7 +3,7 @@
 import { ChevronDown, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { LogoMark } from "@/components/brand/logo";
 import { Avatar } from "@/components/ui";
 import { getNavItems, isActivePath } from "@/config/navigation";
@@ -13,7 +13,14 @@ import { cn } from "@/lib/cn";
 import type { Member } from "@/types";
 import { DevMemberSwitcher } from "./dev-member-switcher";
 
-export function AppHeader({ member, devMembers }: { member: Member; devMembers: Member[] }) {
+type Props = {
+  member: Member;
+  devMembers: Member[];
+  /** Slot do sino de notificações (vem de `features/notificacoes`, montado pelo layout). */
+  notifications?: ReactNode;
+};
+
+export function AppHeader({ member, devMembers, notifications }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -65,7 +72,7 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
           })}
         </nav>
 
-        {/* Notificações entram com o escopo futuro (Fase 4 do plano). */}
+        {notifications}
         <div ref={menuRef} className="relative mr-auto sm:mr-0">
           <button
             type="button"

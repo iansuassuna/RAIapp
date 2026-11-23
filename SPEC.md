@@ -62,6 +62,7 @@ Fonte única da verdade: `src/lib/access.ts`.
 | Registrar atividades e ajustar pontos de alguém | Não | Não | Membros do próprio eixo (nunca a si) | Qualquer pessoa, inclusive coordenadores (nunca a si) |
 | Gerenciar metas do eixo (Painel da Coordenação) | Não | Não | Próprio eixo | Não (só vê) |
 | Ajustar datas de ciclos de avaliação (`/diretoria/ciclos`) | Não | Não | Não | Só ciclos futuros |
+| Ver e marcar as próprias notificações (sino, `/notificacoes`) | Sim | Sim | Sim | Sim |
 
 ---
 
@@ -163,6 +164,25 @@ Fonte única da verdade: `src/lib/access.ts`.
 - **Invariante**: `user.score = SUM(score_entries.delta)`, mantido na mesma transação de cada lançamento (`addScoreEntry`). Nada é apagado: concluir credita, mudar pontos lança só a diferença, reabrir ou excluir a atividade gera estorno.
 - `/atividades`: o próprio membro vê suas atividades, pontuação e histórico (somente leitura).
 
+### 4.11 Central de Notificações (sino no header, `/notificacoes`)
+- **Geração**: `notify(tx, destinatários, …)` grava a notificação **na mesma transação** do evento; se a transação for desfeita, a notificação também é. Quem executou a ação nunca é notificado.
+- **Eventos e destinatários**:
+  | Evento | Destinatário |
+  |---|---|
+  | Requisição criada | coordenação do eixo (sem coordenador → diretoria); pedido de coordenador → diretoria |
+  | Requisição aprovada/recusada, andamento, compra concluída | quem pediu |
+  | Proposta de inventário criada | coordenação do eixo dono do item (sem dono → eixo de quem propôs) |
+  | Proposta resolvida | quem propôs |
+  | Tarefa atribuída | responsável |
+  | Status de tarefa alterado | responsável (se outra pessoa mudou) ou coordenação (se o responsável concluiu) |
+  | Adicionado a projeto (criação ou edição) | quem entrou |
+  | Papel/eixo/time alterado | o membro |
+  | Pontos lançados (atividade ou ajuste) | o membro |
+  | Ciclo de avaliação novo criado | todos |
+- **Tempo real**: após o commit, `pg_notify('raiapp_notifications', 'destinatário:notificação')` chega a um único `LISTEN` por processo (`lib/notification-hub.ts`), que repassa ao stream SSE `GET /api/notifications/stream` do destinatário (sessão validada no banco a cada conexão; 401 sem sessão). Funciona com várias instâncias do app. Se o SSE cair de vez, o sino consulta a cada 30 s.
+- **Sino**: contador de não lidas (anunciado a leitores de tela), as 8 mais recentes, "Marcar todas como lidas" e "Ver todas". Abrir uma notificação a marca como lida e leva ao link dela.
+- **`/notificacoes`**: histórico paginado por cursor (`?antes=`), marcar todas como lidas. Ninguém lê nem marca notificações de outra pessoa.
+
 ## 5. Modelo de Dados Relacional (PostgreSQL / Drizzle)
 
 ```mermaid
@@ -188,6 +208,7 @@ erDiagram
   user ||--o{ activities : owns
   user ||--o{ score_entries : scores
   activities ||--o{ score_entries : credits
+  user ||--o{ notifications : receives
 ```
 
 Metas por eixo em `eixo_goals`. As métricas do eixo não têm tabela: são calculadas a partir de `user.score` e `activities` (a antiga `eixo_metrics` foi removida na migration `0003`).
@@ -205,4 +226,4 @@ Metas por eixo em `eixo_goals`. As métricas do eixo não têm tabela: são calc
 
 ## 7. Escopo Futuro (Fora desta Entrega)
 
-- Central de notificações em tempo real.
+Todo o escopo planejado foi entregue. Ideias em aberto: preferências de notificação por tipo (incluindo envio por e-mail) e limpeza automática de notificações antigas.

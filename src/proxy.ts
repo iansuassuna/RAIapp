@@ -1,7 +1,17 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/eixos", "/minha-area", "/diretoria", "/inventario", "/avaliacao"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/eixos",
+  "/minha-area",
+  "/diretoria",
+  "/inventario",
+  "/avaliacao",
+  "/atividades",
+  "/perfil",
+  "/notificacoes",
+];
 
 /**
  * Next.js 16 Proxy — verificação otimista de presença do cookie de sessão do Better Auth.

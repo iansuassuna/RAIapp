@@ -5,6 +5,7 @@ import type { ActionResult, EvaluationCyclePeriod, Member } from "@/types";
 import { canEditEvaluationCycle, canViewEvaluationCycles } from "../access";
 import { autoCycleFor, periodsOverlap } from "../cycle-period";
 import { todayIso } from "../format";
+import { allUserIds, notify } from "./notifications";
 import { denied, notFound } from "./shared";
 
 /** Serializa criação/edição de ciclos (evita dois ciclos automáticos concorrentes). */
@@ -51,6 +52,12 @@ export async function getCurrentCycle(today: string = todayIso()): Promise<Evalu
       .values({ ...period, id })
       .returning(cycleColumns);
     if (!created) throw new Error("Falha ao criar o ciclo de avaliação.");
+    await notify(tx, await allUserIds(tx), {
+      type: "ciclo-novo",
+      title: `Ciclo de avaliação ${created.label} aberto`,
+      body: "Avalie seus colegas até o fim do ciclo.",
+      href: "/avaliacao",
+    });
     return created;
   });
 }

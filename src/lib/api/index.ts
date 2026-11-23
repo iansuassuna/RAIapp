@@ -56,6 +56,7 @@ export * from "./evaluations";
 export * from "./goals";
 export * from "./inventory";
 export * from "./members";
+export * from "./notifications";
 export * from "./profile";
 export * from "./projects";
 export * from "./requests";

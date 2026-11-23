@@ -1,9 +1,10 @@
 import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
-import { isEixo, isTime, SCORE_ATTENTION_THRESHOLD } from "@/config/options";
+import { describeMember, isEixo, isTime, SCORE_ATTENTION_THRESHOLD } from "@/config/options";
 import { db } from "@/db";
 import { projectMembers, projects, tasks, user } from "@/db/schema";
 import type { ActionResult, Eixo, EixoMember, EixoMemberRole, Member, Role, Time } from "@/types";
 import { canManageMemberRoles, canViewEixo } from "../access";
+import { notify } from "./notifications";
 import { denied, notFound, toMember } from "./shared";
 
 export type MemberRoleInput = {
@@ -185,6 +186,26 @@ export async function updateMemberRole(
       }
     }
 
+    const changed = target.role !== input.role || target.eixo !== nextEixo;
+    const next = toMember({
+      id: targetMemberId,
+      name: "",
+      email: "",
+      role: input.role,
+      eixo: nextEixo,
+      time: nextTime,
+    });
+    await notify(
+      tx,
+      [targetMemberId],
+      {
+        type: "papel-alterado",
+        title: changed ? "Seu papel no RAITec mudou" : "Seu vínculo no RAITec foi atualizado",
+        body: `Agora: ${next ? describeMember(next) : input.role}. Alterado por ${viewer.name}.`,
+        href: "/dashboard",
+      },
+      viewer.id,
+    );
     return { ok: true, id: targetMemberId };
   });
 }

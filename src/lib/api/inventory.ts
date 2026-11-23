@@ -12,6 +12,7 @@ import type {
   Member,
 } from "@/types";
 import { canApproveInventoryProposal, canEditInventoryItem, canProposeInventoryChange } from "../access";
+import { eixoReviewerIds, notify } from "./notifications";
 import { denied, notFound } from "./shared";
 
 /* ---------- Mappers ---------- */
@@ -206,7 +207,36 @@ async function propose(
     data: proposal.data,
     status: "pendente",
   });
+
+  // Aparece no painel do eixo dono do item; item sem dono → coordenação do eixo de quem propôs.
+  const owner = await proposalOwner(proposal, tx);
+  const eixo = owner ?? viewer.eixo;
+  if (eixo) {
+    const verb = { criar: "criar", editar: "editar", excluir: "excluir" }[proposal.action];
+    const itemName = proposal.data?.name ?? (await itemNameOf(tx, proposal.itemId)) ?? "item";
+    await notify(
+      tx,
+      await eixoReviewerIds(tx, eixo),
+      {
+        type: "proposta-nova",
+        title: "Proposta de alteração no inventário",
+        body: `${viewer.name} propõe ${verb} "${itemName}".`,
+        href: `/eixos/${eixo}/painel`,
+      },
+      viewer.id,
+    );
+  }
   return { ok: true, id, pending: true };
+}
+
+async function itemNameOf(tx: DbOrTx, itemId: string | null) {
+  if (!itemId) return null;
+  const [item] = await tx
+    .select({ name: inventoryItems.name })
+    .from(inventoryItems)
+    .where(eq(inventoryItems.id, itemId))
+    .limit(1);
+  return item?.name ?? null;
 }
 
 /* ---------- Alterações (entrada) — aplica direto ou vira proposta ---------- */
@@ -342,6 +372,17 @@ export async function resolveProposal(
       })
       .where(eq(inventoryProposals.id, id));
 
+    await notify(
+      tx,
+      [row.proposerId],
+      {
+        type: "proposta-resolvida",
+        title: decision === "aplicada" ? "Proposta aprovada e aplicada" : "Proposta recusada",
+        body: note ? note.trim().slice(0, 120) : `Analisada por ${viewer.name}.`,
+        href: "/inventario",
+      },
+      viewer.id,
+    );
     return { ok: true };
   });
 }

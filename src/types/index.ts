@@ -255,6 +255,31 @@ export type EvaluationCycle = {
   received: Record<string, number>;
 };
 
+/* ---------- Notificações ---------- */
+
+export type NotificationType =
+  | "requisicao-nova"
+  | "requisicao-resolvida"
+  | "requisicao-andamento"
+  | "proposta-nova"
+  | "proposta-resolvida"
+  | "tarefa-atribuida"
+  | "tarefa-atualizada"
+  | "projeto-adicionado"
+  | "papel-alterado"
+  | "pontos"
+  | "ciclo-novo";
+
+export type NotificationItem = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  href: string | null;
+  read: boolean;
+  createdAt: string; // ISO
+};
+
 /* ---------- Ações ---------- */
 
 /** Resultado padrão de mutações (Server Actions e funções de escrita de `lib/api`). */
