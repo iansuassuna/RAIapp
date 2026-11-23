@@ -65,7 +65,7 @@ export function AppHeader({ member, devMembers, notifications }: Props) {
                     : "text-brand-200 hover:bg-white/5 hover:text-white",
                 )}
               >
-                <Icon className={cn("hidden size-4 lg:block", active && "text-accent-300")} aria-hidden />
+                <Icon className={cn("hidden size-4 xl:block", active && "text-accent-300")} aria-hidden />
                 {label}
               </Link>
             );
