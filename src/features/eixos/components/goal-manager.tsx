@@ -2,7 +2,18 @@
 
 import { CalendarDays, Check, Flag, Pencil, Plus, Target, Trash2, Type } from "lucide-react";
 import { useState } from "react";
-import { Alert, Badge, Button, Card, ConfirmButton, EmptyState, Input, SectionTitle, Select } from "@/components/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  ConfirmButton,
+  DateInput,
+  EmptyState,
+  Input,
+  SectionTitle,
+  Select,
+} from "@/components/ui";
 import { ACTIVITY_STATUS_LABEL, ACTIVITY_STATUS_TONE, ACTIVITY_STATUSES } from "@/config/options";
 import { useFormSubmit } from "@/lib/form";
 import { formatShortDate } from "@/lib/format";
@@ -39,10 +50,9 @@ function GoalForm({ eixo, goal, onDone }: { eixo: Eixo; goal?: EixoGoal; onDone:
         error={errors.title}
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input
+        <DateInput
           id={`${prefix}-deadline`}
           name="deadline"
-          type="date"
           label="Prazo"
           icon={CalendarDays}
           defaultValue={goal?.deadline}

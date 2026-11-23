@@ -98,6 +98,7 @@ Definidos uma única vez em `src/app/globals.css` dentro de `@theme`. O Tailwind
 | `Input` | `label`, `icon` (lucide), `error`, `hint` — rótulo dentro do campo, como no protótipo |
 | `Textarea` | igual ao Input, para texto longo (ícone no topo) |
 | `PasswordInput` | igual ao Input + botão mostrar/ocultar acessível |
+| `DateInput` | data em dd/mm/aaaa com máscara e calendário próprio (mês em pt-BR, domingo a sábado, setas/PageUp/PageDown/Esc, "Hoje" e "Limpar"); envia ISO num campo oculto com o `name`. Use no lugar de `<input type="date">` |
 | `Select` | `options`, `placeholder`, `icon`, `error` |
 | `Card`, `SectionTitle` | contêineres e títulos de seção |
 | `Badge` | `tone`: success · warning · danger · brand · accent |

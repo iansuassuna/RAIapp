@@ -2,7 +2,7 @@
 
 import { CalendarClock, CalendarDays, Check, Pencil } from "lucide-react";
 import { useState } from "react";
-import { Alert, Badge, Button, Card, Input, SectionTitle } from "@/components/ui";
+import { Alert, Badge, Button, Card, DateInput, SectionTitle } from "@/components/ui";
 import type { CycleListItem } from "@/lib/api/cycles";
 import { useFormSubmit } from "@/lib/form";
 import { formatShortDate } from "@/lib/format";
@@ -27,19 +27,17 @@ function CycleForm({ cycle, onDone }: { cycle: CycleListItem; onDone: () => void
     >
       {formError && <Alert tone="danger">{formError}</Alert>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input
+        <DateInput
           id={`cycle-${cycle.id}-start`}
           name="startsOn"
-          type="date"
           label="Início"
           icon={CalendarDays}
           defaultValue={cycle.startsOn}
           error={errors.startsOn}
         />
-        <Input
+        <DateInput
           id={`cycle-${cycle.id}-end`}
           name="endsOn"
-          type="date"
           label="Fim"
           icon={CalendarDays}
           defaultValue={cycle.endsOn}

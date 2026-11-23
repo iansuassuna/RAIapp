@@ -3,7 +3,7 @@
 import { CalendarClock, CalendarDays, Flag, FolderKanban, Save, Text } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Alert, Button, buttonVariants, CheckboxGroup, Input, Select, Textarea } from "@/components/ui";
+import { Alert, Button, buttonVariants, CheckboxGroup, DateInput, Input, Select, Textarea } from "@/components/ui";
 import { memberRoleOrTime, PROJECT_STATUS_LABEL, PROJECT_STATUSES } from "@/config/options";
 import { useFormSubmit } from "@/lib/form";
 import type { ActionResult, Member, Project } from "@/types";
@@ -60,17 +60,15 @@ export function ProjectForm({ eixoMembers, project, cancelHref, action, projects
         error={errors.status}
       />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input
+        <DateInput
           id="startDate"
-          type="date"
           label="Início"
           icon={CalendarDays}
           defaultValue={project?.startDate}
           error={errors.startDate}
         />
-        <Input
+        <DateInput
           id="deadline"
-          type="date"
           label="Prazo final"
           icon={CalendarClock}
           defaultValue={project?.deadline}
