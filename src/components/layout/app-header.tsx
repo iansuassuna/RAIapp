@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -65,7 +65,7 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
           })}
         </nav>
 
-        {/* Notificações, "Meu perfil" e "Configurações" entram com o escopo futuro (Fases 3 e 4 do plano). */}
+        {/* Notificações entram com o escopo futuro (Fase 4 do plano). */}
         <div ref={menuRef} className="relative mr-auto sm:mr-0">
           <button
             type="button"
@@ -87,6 +87,15 @@ export function AppHeader({ member, devMembers }: { member: Member; devMembers: 
               role="menu"
               className="animate-fade-up absolute left-0 mt-2 w-72 overflow-hidden rounded-card bg-surface p-1.5 text-ink shadow-raised ring-1 ring-line sm:left-auto sm:right-0"
             >
+              <Link
+                role="menuitem"
+                href="/perfil"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-surface-muted"
+              >
+                <User className="size-4 text-ink-muted" aria-hidden /> Meu perfil
+              </Link>
+              <div className="my-1 h-px bg-line" />
               {devMembers.length > 0 && (
                 <>
                   <DevMemberSwitcher current={member} members={devMembers} />

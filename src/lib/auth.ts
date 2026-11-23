@@ -2,13 +2,20 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
+import { eq } from "drizzle-orm";
 import { isEixo, isTime } from "@/config/options";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import type { Role } from "@/types";
 import { devQuickSwitchPlugin } from "./dev-auth";
 import { sendMailSafely } from "./mail";
-import { resetPasswordEmail, verificationEmail } from "./mail-templates";
+import {
+  changeEmailConfirmationEmail,
+  newEmailVerificationEmail,
+  resetPasswordEmail,
+  verificationEmail,
+} from "./mail-templates";
+import { avatarUrl, personName } from "./validation";
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET ?? "raiapp-dev-secret-fallback-min-32-chars!!",
@@ -34,10 +41,24 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     expiresIn: 60 * 60,
     sendVerificationEmail: async ({ user, url }) => {
-      await sendMailSafely(verificationEmail(user, url));
+      // Na troca de e-mail, o Better Auth chama este callback com `user.email` = endereço NOVO.
+      const [stored] = await db
+        .select({ email: schema.user.email })
+        .from(schema.user)
+        .where(eq(schema.user.id, user.id));
+      const isEmailChange = stored !== undefined && stored.email !== user.email;
+      await sendMailSafely(isEmailChange ? newEmailVerificationEmail(user, url) : verificationEmail(user, url));
     },
   },
   user: {
+    // Troca de e-mail em duas etapas para contas verificadas: aprova pelo endereço atual, depois confirma o novo.
+    // Contas sem e-mail verificado recebem direto o link no endereço novo. A troca só ocorre ao confirmar o novo.
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        await sendMailSafely(changeEmailConfirmationEmail(user, newEmail, url));
+      },
+    },
     additionalFields: {
       role: {
         type: "string",
@@ -116,14 +137,21 @@ export const auth = betterAuth({
           // `/api/auth/update-user`. Papel, eixo e time só mudam pela diretoria (`updateMemberRole`, direto no banco).
           // O Better Auth pode enviar chaves com `undefined` (campo não alterado): só valores definidos contam.
           for (const field of PROTECTED_USER_FIELDS) {
-            if (data[field] !== undefined) {
-              throw new APIError("BAD_REQUEST", {
-                message: "Papel, eixo e time só podem ser alterados pela diretoria.",
-                code: "INVALID_USER_UPDATE",
-              });
-            }
+            if (data[field] !== undefined) invalidUpdate("Papel, eixo e time só podem ser alterados pela diretoria.");
           }
-          return { data };
+
+          const patch: Record<string, unknown> = { ...data };
+          if (data.name !== undefined) {
+            const parsed = personName.safeParse(data.name);
+            if (!parsed.success) invalidUpdate(parsed.error.issues[0]?.message ?? "Nome inválido.");
+            patch.name = parsed.data;
+          }
+          if (data.image !== null && data.image !== undefined) {
+            const parsed = avatarUrl.safeParse(data.image);
+            if (!parsed.success) invalidUpdate(parsed.error.issues[0]?.message ?? "Endereço de imagem inválido.");
+            patch.image = parsed.data === "" ? null : parsed.data;
+          }
+          return { data: patch };
         },
       },
     },
@@ -132,7 +160,11 @@ export const auth = betterAuth({
 });
 
 /** Campos que nenhum endpoint do Better Auth pode alterar (somente `updateMemberRole`/seed, direto no banco). */
-const PROTECTED_USER_FIELDS = ["role", "eixo", "time", "score"] as const;
+const PROTECTED_USER_FIELDS = ["role", "eixo", "time", "score", "verificationRequired"] as const;
+
+function invalidUpdate(message: string): never {
+  throw new APIError("BAD_REQUEST", { message, code: "INVALID_USER_UPDATE" });
+}
 
 /** Erro 400 legível para o cliente (em vez de `FAILED_TO_CREATE_USER` genérico + stack trace no log). */
 function invalidSignUp(message: string): never {
