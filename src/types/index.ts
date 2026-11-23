@@ -85,7 +85,6 @@ export type EixoOverview = {
   activitiesCount: number;
   /** Média da avaliação cruzada do eixo no ciclo anterior (escala 1–5), ou null sem dados. */
   crossEvaluationAverage: number | null;
-  teams: { time: Time; score: number }[];
   goals: { id: string; title: string; deadline: string; status: ActivityStatus }[];
 };
 

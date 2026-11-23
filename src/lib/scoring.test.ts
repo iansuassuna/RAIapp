@@ -197,20 +197,16 @@ describe("dashboard e métricas derivadas", () => {
     expect(diego.trajectory).toEqual({ capacitacoes: 0, cursos: 0, visitas: 0, atividades: 0 });
   });
 
-  test("visão do eixo: média dos membros (sem coordenação) e por time, e reage a novos pontos", async () => {
+  test("visão do eixo: média dos membros (sem coordenação), sem quebra por time, e reage a novos pontos", async () => {
     const ana = await byId("m1");
     const before = await getEixoOverview(ana, "inovacao");
     // Inovação: Bruno 78 (mídias), Carla 54 (processos), Diego 47 (mídias).
     expect(before?.performance.score).toBe(60);
-    expect(before?.teams).toEqual([
-      { time: "processos", score: 54 },
-      { time: "midias", score: 63 },
-    ]);
+    expect(before).not.toHaveProperty("teams");
     expect(before?.activitiesCount).toBe(5);
 
     await adjustScore(ana, "m3", { delta: 30, reason: "Liderou o hackathon" });
     const after = await getEixoOverview(ana, "inovacao");
-    expect(after?.teams[0]).toEqual({ time: "processos", score: 84 });
     expect(after?.performance.score).toBe(70);
   });
 });

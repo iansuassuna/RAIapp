@@ -100,7 +100,7 @@ Fonte única da verdade: `src/lib/access.ts`.
 - `/eixos` redireciona para o primeiro eixo acessível ao membro.
 - Abas: **Visão geral**, **Projetos**, **Membros** e (para coordenação/diretoria) **Painel da Coordenação** com contador de pendências (requisições pendentes + propostas pendentes).
 - Diretoria vê seletor de eixos (`EixoTabs`) para alternar entre os 3 eixos.
-- **Visão geral**: desempenho do eixo, coordenador atual, contagem de membros, projetos ativos, média de avaliação cruzada do ciclo anterior, pontuação por time e metas do eixo. As métricas são **calculadas** dos dados reais (sem tabela mantida à mão): pontuação do eixo = média dos membros (sem a coordenação); por time = média dos membros do time; atividades = registradas para membros do eixo.
+- **Visão geral**: desempenho do eixo, coordenador atual, contagem de membros, projetos ativos, média de avaliação cruzada do ciclo anterior e metas do eixo. As métricas são **calculadas** dos dados reais (sem tabela mantida à mão): pontuação do eixo = média dos membros (sem a coordenação); atividades = registradas para membros do eixo.
 - **Membros**: lista membros do eixo ordenados por pontuação (`Em dia` se `score >= 60`, senão `Atenção`). Coordenação do eixo pode abrir `/eixos/[eixo]/membros/[memberId]` para gerenciar atividades e pontos do membro e ver avaliações cruzadas detalhadas.
 - **Painel da Coordenação**: além de requisições e propostas, tem o CRUD de **metas do eixo** (título, prazo, status) para a coordenação; a diretoria vê a lista sem editar.
 

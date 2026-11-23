@@ -31,7 +31,7 @@ src/
 │   ├── auth/                 # schemas (zod), actions, LoginForm, RegisterForm, DevQuickLogin
 │   ├── dashboard/            # PerformanceCard, TrajectoryGrid, RecentActivities
 │   ├── diretoria/            # MemberRoleList, schemas, actions (gestão de papéis)
-│   ├── eixos/                # EixoTabs, EixoIndicators, TeamPerformance, EixoMembers, EixoGoals
+│   ├── eixos/                # EixoTabs, EixoIndicators, EixoMembers, EixoGoals, GoalManager
 │   ├── projetos/             # ProjectList/Card/Form/Summary, TaskList/Form, ProjectComponents, AssignedTasks + actions
 │   ├── requisicoes/          # RequestForm (por tipo), DirectorRequestForm, MyRequests, RequestPanel, PurchaseCompleteForm + actions
 │   ├── inventario/           # InventoryBrowser, InventoryForm, ProposalList, ItemUsage + actions
