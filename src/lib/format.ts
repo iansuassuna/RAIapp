@@ -54,3 +54,49 @@ export function formatDateTime(iso: string) {
     .format(new Date(iso))
     .replace(",", " às");
 }
+
+/** Descrição curta do aparelho a partir do User-Agent: "Chrome · Windows". Sem dependências externas. */
+export function describeUserAgent(userAgent: string | null | undefined) {
+  if (!userAgent) return "Aparelho desconhecido";
+  const ua = userAgent;
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /OPR\//.test(ua)
+      ? "Opera"
+      : /Firefox\//.test(ua)
+        ? "Firefox"
+        : /Chrome\//.test(ua)
+          ? "Chrome"
+          : /Safari\//.test(ua)
+            ? "Safari"
+            : null;
+  const os = /Android/.test(ua)
+    ? "Android"
+    : /iPhone|iPad|iPod/.test(ua)
+      ? "iOS"
+      : /Windows/.test(ua)
+        ? "Windows"
+        : /Mac OS X|Macintosh/.test(ua)
+          ? "macOS"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : null;
+  if (!browser && !os) return "Navegador desconhecido";
+  return [browser, os].filter(Boolean).join(" · ");
+}
+
+/** IP legível: IPv6 compactado, loopback como "esta máquina" e endereço não especificado (`::`, `0.0.0.0`) omitido. */
+export function formatIpAddress(ip: string | null | undefined) {
+  if (!ip) return null;
+  let value = ip.trim();
+  if (value.includes(":")) {
+    try {
+      value = new URL(`http://[${value}]`).hostname.replace(/^\[|\]$/g, "");
+    } catch {
+      // Mantém como veio se não for um IPv6 válido.
+    }
+  }
+  if (value === "" || value === "::" || value === "0.0.0.0") return null;
+  if (value === "::1" || value === "127.0.0.1" || value === "::ffff:127.0.0.1") return "esta máquina";
+  return value;
+}

@@ -50,6 +50,7 @@ export * from "./eixos";
 export * from "./evaluations";
 export * from "./inventory";
 export * from "./members";
+export * from "./profile";
 export * from "./projects";
 export * from "./requests";
 

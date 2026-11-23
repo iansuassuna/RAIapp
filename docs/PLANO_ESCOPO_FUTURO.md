@@ -139,6 +139,8 @@ Hoje `activities`, `eixo_goals` e `eixo_metrics` só são alimentadas pelo seed.
 
 ### Fase 3 — "Meu perfil"
 
+> ✅ **Concluída em 22/11/2026.** Rota `/perfil` (feature `features/perfil`, dados em `lib/api/profile.ts`). Inclui uma **correção de segurança** encontrada durante a fase: `eixo`/`time` tinham `input: true` no Better Auth (necessário para o cadastro), o que permitia a qualquer membro trocar o próprio eixo/time via `POST /api/auth/update-user`. O hook `databaseHooks.user.update.before` agora recusa `role`, `eixo`, `time`, `score` e `verificationRequired`. Testes: `src/lib/profile.test.ts` (14) e `src/lib/format.test.ts` (8). "Configurações" foi fundido em "Meu perfil".
+
 - Rota `/perfil` (corrige B6), com seções:
   - **Dados:** nome (Zod ≥ 3) via `auth.api.updateUser`.
   - **Avatar (decisão 3: só URL):** campo de URL gravado em `user.image`, sem upload.
