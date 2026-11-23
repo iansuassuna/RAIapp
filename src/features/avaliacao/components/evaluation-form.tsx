@@ -11,17 +11,18 @@ import { RatingScale } from "./rating-scale";
 
 type Props = {
   colleague: Colleague;
+  cycleId: string;
   criteria: EvaluationCriterion[];
   initial?: EvaluationInput;
   onCancel: () => void;
   onSubmit: (data: EvaluationInput) => void;
 };
 
-export function EvaluationForm({ colleague, criteria, initial, onCancel, onSubmit }: Props) {
+export function EvaluationForm({ colleague, cycleId, criteria, initial, onCancel, onSubmit }: Props) {
   const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(
     buildEvaluationSchema(criteria),
     async (data) => {
-      const result = await submitEvaluationAction(colleague.id, data);
+      const result = await submitEvaluationAction(colleague.id, cycleId, data);
       if (result.ok) onSubmit(toEvaluationInput(data));
       return result;
     },

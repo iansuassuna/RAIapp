@@ -5,7 +5,7 @@ import { canReviewDirectorRequests } from "@/lib/access";
 import { countPendingRequests } from "@/lib/api";
 import { getCurrentMember } from "@/lib/session";
 
-/** Área da diretoria: pedidos das coordenações e gestão de papéis dos membros. */
+/** Área da diretoria: pedidos das coordenações, papéis/pontuação dos membros e ciclos de avaliação. */
 export default async function DirectorLayout({ children }: { children: React.ReactNode }) {
   const member = await getCurrentMember();
   if (!canReviewDirectorRequests(member)) forbidden();
@@ -20,6 +20,7 @@ export default async function DirectorLayout({ children }: { children: React.Rea
         tabs={[
           { href: "/diretoria", label: "Pedidos das coordenações", shortLabel: "Pedidos", exact: true, count: pending },
           { href: "/diretoria/membros", label: "Membros e papéis", shortLabel: "Membros" },
+          { href: "/diretoria/ciclos", label: "Ciclos de avaliação", shortLabel: "Ciclos" },
         ]}
       />
       <div className="pt-2">{children}</div>

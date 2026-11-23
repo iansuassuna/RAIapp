@@ -27,6 +27,7 @@ export function CrossEvaluation({ cycle }: { cycle: EvaluationCycle }) {
       <EvaluationForm
         key={current.id}
         colleague={current}
+        cycleId={cycle.id}
         criteria={cycle.criteria}
         initial={evaluations[current.id]}
         onCancel={() => selectStep(null)}

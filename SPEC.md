@@ -58,6 +58,10 @@ Fonte única da verdade: `src/lib/access.ts`.
 | Ver relatório detalhado de avaliações de membro | Não | Não | Próprio eixo | Não |
 | Gerenciar papéis de membros (`/diretoria/membros`) | Não | Não | Não | Sim |
 | Editar o próprio perfil (`/perfil`: nome, avatar, senha, e-mail, sessões) | Sim | Sim | Sim | Sim |
+| Ver as próprias atividades e histórico de pontos (`/atividades`) | Sim | Sim | Sim | Sim |
+| Registrar atividades e ajustar pontos de alguém | Não | Não | Membros do próprio eixo (nunca a si) | Qualquer pessoa, inclusive coordenadores (nunca a si) |
+| Gerenciar metas do eixo (Painel da Coordenação) | Não | Não | Próprio eixo | Não (só vê) |
+| Ajustar datas de ciclos de avaliação (`/diretoria/ciclos`) | Não | Não | Não | Só ciclos futuros |
 
 ---
 
@@ -88,14 +92,16 @@ Fonte única da verdade: `src/lib/access.ts`.
   - Desligado por padrão (`false`): exige login manual completo.
 
 ### 4.2 Dashboard (`/dashboard`)
-- Exibe saudação personalizada, pontuação pessoal (`score` / meta), grade de trajetória (`capacitacoes`, `cursos`, `visitas`, `atividades`) e lista de atividades recentes persistidas no PostgreSQL.
+- Exibe saudação personalizada, pontuação pessoal (`score` / meta `SCORE_GOAL = 100`), grade de trajetória e as 5 atividades mais recentes, **sempre só do próprio membro** (atividades legadas sem dono não aparecem para ninguém).
+- Trajetória: `capacitacoes`, `cursos` e `visitas` contam atividades **concluídas** do tipo; `atividades` conta todas as registradas. "Ver todas" leva a `/atividades`.
 
 ### 4.3 Gestão de Eixos (`/eixos/[eixo]`)
 - `/eixos` redireciona para o primeiro eixo acessível ao membro.
 - Abas: **Visão geral**, **Projetos**, **Membros** e (para coordenação/diretoria) **Painel da Coordenação** com contador de pendências (requisições pendentes + propostas pendentes).
 - Diretoria vê seletor de eixos (`EixoTabs`) para alternar entre os 3 eixos.
-- **Visão geral**: desempenho do eixo, coordenador atual, contagem de membros, projetos ativos, média de avaliação cruzada do ciclo anterior, pontuação por time e metas do eixo.
-- **Membros**: lista membros do eixo ordenados por pontuação (`Em dia` se `score >= 60`, senão `Atenção`). Coordenação do eixo pode abrir `/eixos/[eixo]/membros/[memberId]` para ver avaliações cruzadas detalhadas.
+- **Visão geral**: desempenho do eixo, coordenador atual, contagem de membros, projetos ativos, média de avaliação cruzada do ciclo anterior, pontuação por time e metas do eixo. As métricas são **calculadas** dos dados reais (sem tabela mantida à mão): pontuação do eixo = média dos membros (sem a coordenação); por time = média dos membros do time; atividades = registradas para membros do eixo.
+- **Membros**: lista membros do eixo ordenados por pontuação (`Em dia` se `score >= 60`, senão `Atenção`). Coordenação do eixo pode abrir `/eixos/[eixo]/membros/[memberId]` para gerenciar atividades e pontos do membro e ver avaliações cruzadas detalhadas.
+- **Painel da Coordenação**: além de requisições e propostas, tem o CRUD de **metas do eixo** (título, prazo, status) para a coordenação; a diretoria vê a lista sem editar.
 
 ### 4.4 Projetos e Tarefas (`/eixos/[eixo]/projetos`)
 - CRUD de projetos restrito à coordenação do eixo.
@@ -124,7 +130,10 @@ Fonte única da verdade: `src/lib/access.ts`.
 - **Prazos integrados**: compras, verbas, reuniões e outros aprovados em andamento aparecem em **Minha área** (e compras do eixo aparecem também para a coordenação e no projeto vinculado).
 
 ### 4.7 Avaliação Cruzada (`/avaliacao`)
-- Cada membro avalia qualquer colega (todos os eixos + coordenação + diretoria, exceto a si mesmo) no ciclo atual em 5 critérios (escala 1–5) + comentário opcional.
+- Cada membro avalia qualquer colega (todos os eixos + coordenação + diretoria, exceto a si mesmo) no ciclo vigente em 5 critérios (escala 1–5) + comentário opcional.
+- **Ciclos por data** (`evaluation_cycles`): o vigente é o que cobre a data de hoje (fuso de Fortaleza); nenhum status é gravado e não há cron. Se nenhum ciclo cobre hoje, o sistema cria o do mês automaticamente (id `AAAA-MM`, rótulo "Novembro/26"), sem sobrepor ciclos existentes. O anterior é o último encerrado.
+- A tela mostra o ciclo e quanto falta ("encerra em 7 dias (30/11)"). O formulário envia o id do ciclo exibido: se ele já encerrou, o envio é recusado com aviso (não cai silenciosamente no ciclo novo).
+- A diretoria lista os ciclos em `/diretoria/ciclos` e só ajusta datas de ciclos que ainda não começaram, sem sobreposição.
 - Reenvio no mesmo ciclo atualiza a avaliação existente (`UPSERT` na chave `(cycle, evaluator_id, evaluatee_id)`).
 - O avaliado vê apenas suas médias agregadas por critério do ciclo anterior; a coordenação do eixo do avaliado vê o detalhamento completo por ciclo.
 
@@ -148,6 +157,12 @@ Fonte única da verdade: `src/lib/access.ts`.
 - **Sessões ativas**: lista aparelho (navegador · sistema), último acesso e IP; "Sair dos outros aparelhos" encerra todas as sessões exceto a atual.
 - **Segurança**: `/api/auth/update-user` recusa (400) qualquer tentativa de alterar `role`, `eixo`, `time`, `score` ou `verificationRequired` — esses campos só mudam por `updateMemberRole` (diretoria). Nome e avatar são validados também no hook do Better Auth, não só no formulário.
 
+### 4.10 Atividades e Pontuação (`/atividades`, gestão pela coordenação/diretoria)
+- **Atividades** (`activities`): título, tipo (capacitação, curso, visita, projeto), data, status e pontos (0–100). Registradas pela coordenação do eixo (para membros do eixo) ou pela diretoria (para qualquer pessoa, inclusive coordenadores), em `/eixos/[eixo]/membros/[memberId]` e `/diretoria/membros/[memberId]`. Ninguém lança pontos para si.
+- **Pontuação em duas fontes** num único histórico (`score_entries`): pontos de atividades **concluídas** e **ajustes manuais** (−100 a +100, motivo obrigatório; não pode deixar o total negativo).
+- **Invariante**: `user.score = SUM(score_entries.delta)`, mantido na mesma transação de cada lançamento (`addScoreEntry`). Nada é apagado: concluir credita, mudar pontos lança só a diferença, reabrir ou excluir a atividade gera estorno.
+- `/atividades`: o próprio membro vê suas atividades, pontuação e histórico (somente leitura).
+
 ## 5. Modelo de Dados Relacional (PostgreSQL / Drizzle)
 
 ```mermaid
@@ -169,9 +184,13 @@ erDiagram
   resource_requests ||--o{ request_history : logs
   user ||--o{ evaluations : evaluates
   user ||--o{ evaluations : evaluated_by
+  evaluation_cycles ||--o{ evaluations : groups
+  user ||--o{ activities : owns
+  user ||--o{ score_entries : scores
+  activities ||--o{ score_entries : credits
 ```
 
-Tabelas auxiliares de métricas/painel (populadas via `seed.ts`): `activities`, `eixo_goals`, `eixo_metrics`.
+Metas por eixo em `eixo_goals`. As métricas do eixo não têm tabela: são calculadas a partir de `user.score` e `activities` (a antiga `eixo_metrics` foi removida na migration `0003`).
 
 ---
 
@@ -186,5 +205,4 @@ Tabelas auxiliares de métricas/painel (populadas via `seed.ts`): `activities`, 
 
 ## 7. Escopo Futuro (Fora desta Entrega)
 
-- Telas de CRUD para atividades do dashboard, metas de eixo e gestão de pontuações/ciclos de avaliação.
 - Central de notificações em tempo real.

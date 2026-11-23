@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CrossEvaluation, ReceivedScores } from "@/features/avaliacao";
 import { getEvaluationCycle } from "@/lib/api";
+import { cycleDeadlineText } from "@/lib/format";
 import { getCurrentMember } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Avaliação Cruzada" };
@@ -12,7 +13,9 @@ export default async function AvaliacaoPage() {
   return (
     <div className="space-y-8 pt-7">
       <div className="animate-fade-up">
-        <p className="text-sm text-ink-muted">Ciclo {cycle.label} · suas respostas são anônimas</p>
+        <p className="text-sm text-ink-muted">
+          Ciclo {cycle.label} · {cycleDeadlineText(cycle.daysLeft, cycle.endsOn)} · suas respostas são anônimas
+        </p>
         <h1 className="font-display text-2xl font-bold tracking-tight text-brand-950 sm:text-3xl">Avaliação Cruzada</h1>
       </div>
 

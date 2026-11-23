@@ -19,11 +19,12 @@ Referência completa (tabela de tokens, variantes): `docs/DESIGN_SYSTEM.md`. Est
 ```
 app/(auth)/…        rotas públicas (login, cadastro, esqueci-senha, redefinir-senha, verificar-email) — painel da marca no desktop
 app/(app)/…         rotas internas autenticadas — AppHeader + BottomNav + forbidden.tsx
-  dashboard/          desempenho, trajetória, atividades recentes
-  eixos/[eixo]/       layout (checa acesso + abas) → page (visão geral), projetos/, projetos/[projectId]/(editar), membros/, membros/[memberId], painel/ (Painel da Coordenação)
+  dashboard/          desempenho, trajetória, atividades recentes (só do próprio membro)
+  atividades/         minhas atividades + histórico de pontos (somente leitura)
+  eixos/[eixo]/       layout (checa acesso + abas) → page (visão geral), projetos/, projetos/[projectId]/(editar), membros/, membros/[memberId] (atividades, pontos e avaliações), painel/ (Painel da Coordenação + metas)
   inventario/         lista com filtros, novo, [id] (detalhe + uso), [id]/editar
   minha-area/         layout (abas; diretoria é redirecionada) → page (projetos afiliados + tarefas), requisicoes/
-  diretoria/          layout (abas; só diretoria) → page (pedidos dos coordenadores), membros/ (gestão de papéis)
+  diretoria/          layout (abas; só diretoria) → page (pedidos), membros/ (papéis), membros/[memberId] (pontuação), ciclos/
   avaliacao/          avaliação cruzada entre colegas
   perfil/             Meu perfil (nome, avatar por URL, senha, e-mail, sessões ativas)
 app/api/auth/[...all]/ route handler do Better Auth
@@ -32,14 +33,15 @@ components/ui/      primitivos genéricos, sem regra de negócio (exportados em 
 components/brand/   Logo / LogoMark
 components/layout/  AppHeader, BottomNav, PageHeader, DevMemberSwitcher (condicional a DEV_QUICK_SWITCH)
 features/<dominio>/ components/ + schemas.ts (zod) + actions.ts ("use server"); expõe componentes em index.ts
-                    domínios: auth, dashboard, diretoria, eixos, perfil, projetos, requisicoes, inventario, avaliacao
-config/             options.ts (eixos, times, rótulos e tons, escala 1–5), requests.ts (tipos de requisição, ciclos de
+                    domínios: auth, dashboard, diretoria, eixos, perfil, pontuacao, projetos, requisicoes, inventario, avaliacao
+config/             options.ts (eixos, times, rótulos e tons, escala 1–5, SCORE_GOAL), activity-icons.ts, requests.ts (tipos de requisição, ciclos de
                     andamento, salas, armários, categorias), navigation.ts
 db/                 index.ts (Drizzle + postgres.js), schema/ (enums, auth, domain), seed.ts, seed-data.ts
 lib/                api/ (dados por domínio, index.ts reexporta), access.ts (permissões), auth.ts, auth-client.ts,
                     session.ts (sessão Better Auth), dev-auth.ts, action-helpers.ts, validation.ts (zod compartilhado), mail.ts,
                     mail-templates.ts, auth-errors.ts,
-                    form.ts (hook client), deadlines.ts (requisições → linhas de prazo), cn.ts, format.ts
+                    form.ts (hook client), deadlines.ts (requisições → linhas de prazo), cycle-period.ts (períodos dos ciclos), cn.ts,
+                    format.ts
 types/              tipos de domínio
 ```
 

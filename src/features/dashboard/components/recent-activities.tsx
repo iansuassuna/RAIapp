@@ -1,29 +1,33 @@
-import { BookOpen, Cpu, GraduationCap, type LucideIcon, MapPin } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import { Badge, Card, SectionTitle } from "@/components/ui";
+import { ACTIVITY_TYPE_ICON } from "@/config/activity-icons";
 import { ACTIVITY_STATUS_LABEL, ACTIVITY_STATUS_TONE, ACTIVITY_TYPE_LABEL } from "@/config/options";
 import { formatShortDate } from "@/lib/format";
-import type { Activity, ActivityType } from "@/types";
-
-const typeIcon: Record<ActivityType, LucideIcon> = {
-  capacitacao: GraduationCap,
-  curso: BookOpen,
-  visita: MapPin,
-  projeto: Cpu,
-};
+import type { Activity } from "@/types";
 
 export function RecentActivities({ activities }: { activities: Activity[] }) {
   return (
     <section aria-labelledby="atividades" className="space-y-3">
-      {/* "Ver todas" e o detalhe de cada atividade chegam com a tela de atividades (escopo futuro, Fase 2). */}
-      <SectionTitle id="atividades">Atividades recentes</SectionTitle>
+      <div className="flex items-center justify-between">
+        <SectionTitle id="atividades">Atividades recentes</SectionTitle>
+        <Link
+          href="/atividades"
+          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-accent-600"
+        >
+          Ver todas <ArrowUpRight className="size-4" aria-hidden />
+        </Link>
+      </div>
 
       <Card className="p-2">
         {activities.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-ink-muted">Nenhuma atividade registrada ainda.</p>
+          <p className="px-4 py-10 text-center text-sm text-ink-muted">
+            Nenhuma atividade registrada ainda. A coordenação do seu eixo registra suas capacitações, cursos e visitas.
+          </p>
         ) : (
           <ul className="divide-y divide-line/70">
             {activities.map((a) => {
-              const Icon = typeIcon[a.type];
+              const Icon = ACTIVITY_TYPE_ICON[a.type];
               return (
                 <li key={a.id}>
                   <div className="flex items-center gap-3 rounded-xl px-3 py-3">

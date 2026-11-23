@@ -109,6 +109,8 @@ Cada fase segue o checklist do `code-quality.md` (lint, typecheck, test, build) 
 
 ### Fase 2 — CRUD de atividades, metas de eixo, pontuações e ciclos
 
+> ✅ **Concluída em 23/11/2026.** Migrations `0002` (ciclos, ledger, atividades com pontos/autor, datas como `date`, conversão dos rótulos "Mês/AA" para ids `AAAA-MM` e saldo inicial no ledger) e `0003` (remove `eixo_metrics`). Camada de dados em `lib/api/{cycles,scores,activities,goals}.ts`; regras em `access.ts`; período dos ciclos em `lib/cycle-period.ts`. Telas: `/atividades`, gestão em `/eixos/[eixo]/membros/[memberId]` e `/diretoria/membros/[memberId]`, metas no Painel da Coordenação, `/diretoria/ciclos`. Decisões tomadas na implementação: pontos só contam com a atividade **concluída**; atividades legadas sem dono (`member_id` nulo) não aparecem nem contam; ajuste manual entre −100 e +100 e sem deixar o total negativo; métricas do eixo = média dos membros sem a coordenação. Testes: `scoring.test.ts` (18), `cycle-period.test.ts` (7) e regras em `access.test.ts`.
+
 Hoje `activities`, `eixo_goals` e `eixo_metrics` só são alimentadas pelo seed. Os ciclos estão fixos em `config/options.ts` (`EVALUATION_CYCLES`) e `user.score` não tem fluxo de alteração.
 
 **Modelo (migration nova)**

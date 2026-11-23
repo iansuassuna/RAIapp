@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { forbidden, notFound } from "next/navigation";
 import { isEixo, ownerSelectOptions } from "@/config/options";
+import { EixoGoals, GoalManager } from "@/features/eixos";
 import { ProposalList } from "@/features/inventario";
 import { RequestPanel } from "@/features/requisicoes";
-import { assignableOwners, canUseCoordinationPanel } from "@/lib/access";
-import { getEixoRequests, getInventory, getLookups, getPanelProposals } from "@/lib/api";
+import { assignableOwners, canManageEixoGoals, canUseCoordinationPanel } from "@/lib/access";
+import { getEixoGoals, getEixoRequests, getInventory, getLookups, getPanelProposals } from "@/lib/api";
 import { getCurrentMember } from "@/lib/session";
 import type { InventoryItem } from "@/types";
 
@@ -12,7 +13,8 @@ export const metadata: Metadata = { title: "Painel da Coordenação" };
 
 /**
  * Painel da Coordenação: requisições dos membros (para analisar e em andamento),
- * compras aguardando, autorizações ativas e propostas de inventário do time Processos.
+ * compras aguardando, autorizações ativas, propostas de inventário do time Processos e metas do eixo
+ * (editáveis pela coordenação; a diretoria vê só a lista).
  * Coordenação do eixo ou diretoria (que age em todos os eixos).
  */
 export default async function CoordinationPanelPage({ params }: { params: Promise<{ eixo: string }> }) {
@@ -21,13 +23,14 @@ export default async function CoordinationPanelPage({ params }: { params: Promis
   const member = await getCurrentMember();
   if (!canUseCoordinationPanel(member, eixo)) forbidden();
 
-  const [requests, proposals, inventory, lookups] = await Promise.all([
+  const [requests, proposals, inventory, lookups, goals] = await Promise.all([
     getEixoRequests(member, eixo),
     getPanelProposals(member, eixo),
     getInventory(),
     getLookups(),
+    getEixoGoals(member, eixo),
   ]);
-  if (!requests) forbidden();
+  if (!requests || !goals) forbidden();
   const items = Object.fromEntries(inventory.map((i) => [i.id, i as InventoryItem]));
 
   return (
@@ -39,14 +42,17 @@ export default async function CoordinationPanelPage({ params }: { params: Promis
         ownerOptions={ownerSelectOptions(assignableOwners(member))}
         defaultOwner={eixo}
       />
-      <ProposalList
-        title="Alterações de inventário propostas"
-        proposals={proposals}
-        items={items}
-        memberNames={lookups.memberNames}
-        canDecide
-        emptyText="Nenhuma proposta do time Processos"
-      />
+      <div className="space-y-8">
+        <ProposalList
+          title="Alterações de inventário propostas"
+          proposals={proposals}
+          items={items}
+          memberNames={lookups.memberNames}
+          canDecide
+          emptyText="Nenhuma proposta do time Processos"
+        />
+        {canManageEixoGoals(member, eixo) ? <GoalManager eixo={eixo} goals={goals} /> : <EixoGoals goals={goals} />}
+      </div>
     </div>
   );
 }

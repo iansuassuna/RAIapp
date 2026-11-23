@@ -131,3 +131,36 @@ export function assignableOwners(viewer: Pick<Member, "role" | "eixo" | "time">)
   if (canProposeInventoryChange(viewer) && viewer.role === "membro") return all;
   return all.filter((owner) => canEditInventoryItem(viewer, { ownerEixo: owner }));
 }
+
+/* ---------- Pontuação, atividades, metas e ciclos (Fase 2) ---------- */
+
+type ScoredMember = Pick<Member, "id" | "role" | "eixo">;
+
+/**
+ * Registrar atividades e ajustar pontos de um membro: coordenação do eixo (só para membros do eixo)
+ * e diretoria (qualquer pessoa, inclusive coordenadores). Ninguém lança pontos para si mesmo.
+ */
+export function canManageMemberScore(viewer: ViewerWithId, member: ScoredMember) {
+  if (viewer.id === member.id) return false;
+  if (viewer.role === "diretoria") return true;
+  return viewer.role === "coordenador" && member.role === "membro" && member.eixo === viewer.eixo;
+}
+
+/** Ver atividades e histórico de pontos: o próprio membro ou quem pode gerenciá-los. */
+export function canViewMemberScore(viewer: ViewerWithId, member: ScoredMember) {
+  return viewer.id === member.id || canManageMemberScore(viewer, member);
+}
+
+/** Metas do eixo (CRUD no Painel da Coordenação): coordenação do próprio eixo. */
+export function canManageEixoGoals(viewer: Viewer, eixo: Eixo) {
+  return canManageEixo(viewer, eixo);
+}
+
+/** Ciclos de avaliação: só a diretoria, e só ciclos que ainda não começaram (`today` em AAAA-MM-DD). */
+export function canEditEvaluationCycle(viewer: Viewer, cycle: { startsOn: string }, today: string) {
+  return viewer.role === "diretoria" && cycle.startsOn > today;
+}
+
+export function canViewEvaluationCycles(viewer: Viewer) {
+  return viewer.role === "diretoria";
+}

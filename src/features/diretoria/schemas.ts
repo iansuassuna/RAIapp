@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EIXOS, TIMES } from "@/config/options";
+import { isoDate } from "@/lib/validation";
 import type { Eixo, Role, Time } from "@/types";
 
 const eixoValues = EIXOS.map((e) => e.value) as [Eixo, ...Eixo[]];
@@ -32,3 +33,8 @@ export const memberRoleSchema = z
   }));
 
 export type MemberRoleSchemaInput = z.input<typeof memberRoleSchema>;
+
+export const cyclePeriodSchema = z.object({
+  startsOn: isoDate("Informe o início."),
+  endsOn: isoDate("Informe o fim."),
+});

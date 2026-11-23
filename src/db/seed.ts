@@ -1,11 +1,11 @@
 import { hashPassword } from "better-auth/crypto";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { type Database, db } from "./index";
 import {
   account,
   activities,
   eixoGoals,
-  eixoMetrics,
+  evaluationCycles,
   evaluations,
   inventoryItems,
   inventoryProposals,
@@ -15,16 +15,17 @@ import {
   projects,
   requestHistory,
   resourceRequests,
+  scoreEntries,
   session,
   tasks,
   user,
   verification,
 } from "./schema";
 import {
+  SEED_CYCLES,
   SEED_PASSWORD,
   seedActivities,
   seedEixoGoals,
-  seedEixoMetrics,
   seedEvaluations,
   seedInventory,
   seedLoans,
@@ -50,7 +51,7 @@ async function getSeedPasswordHash() {
 export async function seedDatabase(targetDb: Database = db) {
   const passwordHash = await getSeedPasswordHash();
 
-  await targetDb
+  const insertedUsers = await targetDb
     .insert(user)
     .values(
       seedMembers.map((m) => ({
@@ -65,7 +66,9 @@ export async function seedDatabase(targetDb: Database = db) {
         score: seedMemberScores[m.id] ?? 0,
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: user.id });
+  const freshUsers = new Set(insertedUsers.map((u) => u.id));
 
   await targetDb
     .insert(account)
@@ -80,11 +83,61 @@ export async function seedDatabase(targetDb: Database = db) {
     )
     .onConflictDoNothing();
 
-  await targetDb.insert(eixoMetrics).values(seedEixoMetrics).onConflictDoNothing();
-
   await targetDb.insert(eixoGoals).values(seedEixoGoals).onConflictDoNothing();
 
-  await targetDb.insert(activities).values(seedActivities).onConflictDoNothing();
+  const insertedActivities = await targetDb
+    .insert(activities)
+    .values(seedActivities)
+    .onConflictDoNothing()
+    .returning({ id: activities.id });
+  const freshActivities = new Set(insertedActivities.map((a) => a.id));
+
+  // Ledger idempotente e coerente com user.score (= SUM(delta)), inclusive rodando sobre um banco já usado:
+  // - só lança pontos de atividades inseridas AGORA;
+  // - usuário novo: saldo inicial = pontuação do seed − pontos dessas atividades (o total já está no score);
+  // - usuário que já existia: o score sobe pelos pontos lançados agora.
+  const activityEntries = seedActivities
+    .filter((a) => freshActivities.has(a.id) && a.status === "concluida" && a.points > 0)
+    .map((a) => ({
+      id: `se-act-${a.id}`,
+      memberId: a.memberId,
+      delta: a.points,
+      source: "atividade" as const,
+      activityId: a.id,
+      reason: `Atividade concluída: ${a.title}`,
+      createdBy: a.createdBy,
+    }));
+  const initialEntries = seedMembers
+    .filter((m) => freshUsers.has(m.id))
+    .flatMap((m) => {
+      const fromActivities = activityEntries.filter((e) => e.memberId === m.id).reduce((sum, e) => sum + e.delta, 0);
+      const delta = (seedMemberScores[m.id] ?? 0) - fromActivities;
+      return delta === 0
+        ? []
+        : [
+            {
+              id: `se-init-${m.id}`,
+              memberId: m.id,
+              delta,
+              source: "ajuste" as const,
+              activityId: null,
+              reason: "Saldo inicial (antes do histórico de pontuação)",
+              createdBy: null,
+            },
+          ];
+    });
+  if (initialEntries.length + activityEntries.length > 0) {
+    await targetDb
+      .insert(scoreEntries)
+      .values([...initialEntries, ...activityEntries])
+      .onConflictDoNothing();
+  }
+  for (const entry of activityEntries.filter((e) => !freshUsers.has(e.memberId))) {
+    await targetDb
+      .update(user)
+      .set({ score: sql`${user.score} + ${entry.delta}` })
+      .where(eq(user.id, entry.memberId));
+  }
 
   await targetDb.insert(inventoryItems).values(seedInventory).onConflictDoNothing();
 
@@ -223,6 +276,8 @@ export async function seedDatabase(targetDb: Database = db) {
     )
     .onConflictDoNothing();
 
+  await targetDb.insert(evaluationCycles).values([SEED_CYCLES.previous, SEED_CYCLES.current]).onConflictDoNothing();
+
   await targetDb
     .insert(evaluations)
     .values(
@@ -258,9 +313,10 @@ export async function resetTestDatabase(targetDb: Database = db) {
       ${projects},
       ${inventoryItems},
       ${evaluations},
+      ${evaluationCycles},
+      ${scoreEntries},
       ${activities},
       ${eixoGoals},
-      ${eixoMetrics},
       ${session},
       ${account},
       ${verification},

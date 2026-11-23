@@ -1,4 +1,5 @@
-import { EVALUATION_CRITERIA, EVALUATION_CYCLES } from "@/config/options";
+import { EVALUATION_CRITERIA } from "@/config/options";
+import { monthCycleFor } from "@/lib/cycle-period";
 import type {
   Activity,
   Eixo,
@@ -83,31 +84,87 @@ export const seedMemberScores: Record<string, number> = {
   d1: 85,
 };
 
-export const seedActivities: (Activity & { memberId: string | null })[] = [
-  { id: "a1", memberId: null, title: "Scrum e Trello", type: "capacitacao", date: "2026-10-27", status: "concluida" },
-  { id: "a2", memberId: null, title: "Circuitos", type: "capacitacao", date: "2026-10-29", status: "concluida" },
-  { id: "a3", memberId: null, title: "RAIgala", type: "projeto", date: "2026-10-30", status: "concluida" },
+/** Ciclos usados pelas avaliações do seed (os seguintes são criados automaticamente por data). */
+export const SEED_CYCLES = {
+  previous: monthCycleFor("2026-10-01"),
+  current: monthCycleFor("2026-11-01"),
+};
+
+/**
+ * Atividades com dono e pontos. Pontos de atividades concluídas entram no ledger; o restante da
+ * pontuação de cada membro vem de um lançamento de "saldo inicial" (ver `seed.ts`).
+ */
+export const seedActivities: (Activity & { memberId: string; points: number; createdBy: string })[] = [
+  {
+    id: "a1",
+    memberId: "m2",
+    title: "Scrum e Trello",
+    type: "capacitacao",
+    date: "2026-10-27",
+    status: "concluida",
+    points: 10,
+    createdBy: "m1",
+  },
+  {
+    id: "a2",
+    memberId: "m2",
+    title: "Circuitos",
+    type: "capacitacao",
+    date: "2026-10-29",
+    status: "concluida",
+    points: 10,
+    createdBy: "m1",
+  },
+  {
+    id: "a3",
+    memberId: "m2",
+    title: "RAIgala",
+    type: "projeto",
+    date: "2026-10-30",
+    status: "concluida",
+    points: 15,
+    createdBy: "m1",
+  },
   {
     id: "a4",
-    memberId: null,
+    memberId: "m2",
     title: "Visita técnica — Laboratório",
     type: "visita",
     date: "2026-11-12",
     status: "em-andamento",
+    points: 5,
+    createdBy: "m1",
   },
-];
-
-export const seedEixoMetrics: {
-  eixo: Eixo;
-  score: number;
-  goal: number;
-  activitiesCount: number;
-  processosScore: number;
-  midiasScore: number;
-}[] = [
-  { eixo: "inovacao", score: 72, goal: 100, activitiesCount: 31, processosScore: 78, midiasScore: 66 },
-  { eixo: "tecnico-sustentavel", score: 58, goal: 100, activitiesCount: 22, processosScore: 61, midiasScore: 55 },
-  { eixo: "tecnologias-saude", score: 85, goal: 100, activitiesCount: 27, processosScore: 88, midiasScore: 81 },
+  {
+    id: "a5",
+    memberId: "m3",
+    title: "Scrum e Trello",
+    type: "capacitacao",
+    date: "2026-10-27",
+    status: "concluida",
+    points: 10,
+    createdBy: "m1",
+  },
+  {
+    id: "a6",
+    memberId: "m6",
+    title: "Curso de solda",
+    type: "curso",
+    date: "2026-11-05",
+    status: "concluida",
+    points: 8,
+    createdBy: "m5",
+  },
+  {
+    id: "a7",
+    memberId: "m9",
+    title: "Visita ao HUWC",
+    type: "visita",
+    date: "2026-11-08",
+    status: "concluida",
+    points: 6,
+    createdBy: "m8",
+  },
 ];
 
 export const seedEixoGoals: {
@@ -526,7 +583,7 @@ function buildEvaluations(): EvaluationRecord[] {
       );
       records.push({
         id: `e-${evaluatee.id}-${k}`,
-        cycle: EVALUATION_CYCLES.previous,
+        cycle: SEED_CYCLES.previous.id,
         evaluatorId: evaluator.id,
         evaluateeId: evaluatee.id,
         ratings,
@@ -537,7 +594,7 @@ function buildEvaluations(): EvaluationRecord[] {
   });
   records.push({
     id: "e-now-1",
-    cycle: EVALUATION_CYCLES.current,
+    cycle: SEED_CYCLES.current.id,
     evaluatorId: "m3",
     evaluateeId: "m2",
     ratings: { comprometimento: 5, comunicacao: 4, equipe: 5, tecnica: 4, proatividade: 4 },

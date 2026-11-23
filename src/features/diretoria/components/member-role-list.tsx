@@ -1,8 +1,9 @@
 "use client";
 
 import { Layers, Shield, Users } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
-import { Alert, Avatar, Badge, Button, Card, EmptyState, SectionTitle, Select } from "@/components/ui";
+import { Alert, Avatar, Badge, Button, buttonVariants, Card, EmptyState, SectionTitle, Select } from "@/components/ui";
 import { describeMember, EIXOS, ROLE_LABEL, ROLE_TONE, TIMES } from "@/config/options";
 import type { Eixo, Member, Role, Time } from "@/types";
 import { updateMemberRoleAction } from "../actions";
@@ -70,6 +71,15 @@ function MemberRoleRow({ member, isSelf }: { member: Member; isSelf: boolean }) 
         </div>
         <div className="flex items-center gap-2">
           <Badge tone={ROLE_TONE[member.role]}>{ROLE_LABEL[member.role]}</Badge>
+          {!isSelf && (
+            <Link
+              href={`/diretoria/membros/${member.id}`}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+              aria-label={`Atividades e pontuação de ${member.name}`}
+            >
+              Pontuação
+            </Link>
+          )}
           <Button
             type="button"
             variant={editing ? "ghost" : "secondary"}

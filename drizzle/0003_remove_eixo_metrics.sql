@@ -1,0 +1,1 @@
+DROP TABLE "eixo_metrics" CASCADE;

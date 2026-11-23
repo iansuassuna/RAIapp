@@ -100,3 +100,10 @@ export function formatIpAddress(ip: string | null | undefined) {
   if (value === "::1" || value === "127.0.0.1" || value === "::ffff:127.0.0.1") return "esta máquina";
   return value;
 }
+
+/** "encerra hoje" · "encerra amanhã" · "encerra em 5 dias (30/11)". */
+export function cycleDeadlineText(daysLeft: number, endsOn: string) {
+  if (daysLeft <= 0) return "encerra hoje";
+  if (daysLeft === 1) return "encerra amanhã";
+  return `encerra em ${daysLeft} dias (${formatShortDate(endsOn).slice(0, 5)})`;
+}
