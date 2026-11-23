@@ -2,7 +2,7 @@ import { and, asc, count, eq, ne } from "drizzle-orm";
 import { SCORE_GOAL } from "@/config/options";
 import { db } from "@/db";
 import { activities, eixoGoals, projects, user } from "@/db/schema";
-import type { Eixo, EixoOverview, Member, Time } from "@/types";
+import type { Eixo, EixoOverview, Member } from "@/types";
 import { canViewEixo } from "../access";
 import { eixoEvaluationAverage } from "./evaluations";
 
@@ -11,8 +11,8 @@ const average = (values: number[]) =>
 
 /**
  * Visão geral de um eixo, ou `null` se o membro não tem acesso a ele.
- * Métricas derivadas dos dados reais: pontuação do eixo = média dos membros (sem a coordenação),
- * pontuação por time = média dos membros do time, atividades = registradas para membros do eixo.
+ * Métricas derivadas dos dados reais: pontuação do eixo = média dos membros (sem a coordenação) e
+ * atividades = registradas para membros do eixo.
  */
 export async function getEixoOverview(viewer: Member, eixo: Eixo): Promise<EixoOverview | null> {
   if (!canViewEixo(viewer, eixo)) return null;
@@ -24,7 +24,7 @@ export async function getEixoOverview(viewer: Member, eixo: Eixo): Promise<EixoO
       .where(eq(eixoGoals.eixo, eixo))
       .orderBy(asc(eixoGoals.deadline)),
     db
-      .select({ id: user.id, name: user.name, role: user.role, time: user.time, score: user.score })
+      .select({ id: user.id, name: user.name, role: user.role, score: user.score })
       .from(user)
       .where(eq(user.eixo, eixo)),
     db
@@ -40,7 +40,6 @@ export async function getEixoOverview(viewer: Member, eixo: Eixo): Promise<EixoO
   ]);
 
   const regular = members.filter((m) => m.role === "membro");
-  const teamScore = (time: Time) => average(regular.filter((m) => m.time === time).map((m) => m.score));
 
   return {
     eixo,
@@ -50,10 +49,6 @@ export async function getEixoOverview(viewer: Member, eixo: Eixo): Promise<EixoO
     activeProjects: activeProjects.length,
     activitiesCount: activityCount?.total ?? 0,
     crossEvaluationAverage,
-    teams: [
-      { time: "processos", score: teamScore("processos") },
-      { time: "midias", score: teamScore("midias") },
-    ],
     goals,
   };
 }
