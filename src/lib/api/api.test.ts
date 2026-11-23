@@ -403,49 +403,6 @@ describe("avaliação cruzada", () => {
 });
 
 describe("autenticação (Better Auth)", () => {
-  test.each([
-    ["eixo", { eixo: "tecnologias-saude" }],
-    ["time", { time: "processos" }],
-    ["eixo e time juntos", { eixo: "tecnologias-saude", time: "processos" }],
-    ["papel", { role: "diretoria" }],
-    ["pontuação", { score: 999 }],
-  ])("membro não consegue alterar %s do próprio cadastro via /update-user", async (_label, body) => {
-    const login = await auth.api.signInEmail({
-      body: { email: "bruno@raitec.ufc.br", password: SEED_PASSWORD },
-      returnHeaders: true,
-    });
-    const cookie = login.headers
-      .getSetCookie()
-      .map((c) => c.split(";")[0])
-      .join("; ");
-
-    let status: number | undefined;
-    try {
-      await auth.api.updateUser({ body: body as never, headers: new Headers({ cookie }) });
-    } catch (error) {
-      status = (error as { statusCode?: number }).statusCode;
-    }
-
-    expect(status).toBe(400);
-    const [row] = await db.select().from(user).where(eq(user.email, "bruno@raitec.ufc.br"));
-    expect(row).toMatchObject({ role: "membro", eixo: "inovacao", time: "midias", score: 78 });
-  });
-
-  test("membro ainda consegue alterar o próprio nome via /update-user", async () => {
-    const login = await auth.api.signInEmail({
-      body: { email: "bruno@raitec.ufc.br", password: SEED_PASSWORD },
-      returnHeaders: true,
-    });
-    const cookie = login.headers
-      .getSetCookie()
-      .map((c) => c.split(";")[0])
-      .join("; ");
-
-    await auth.api.updateUser({ body: { name: "Bruno Lima Souza" }, headers: new Headers({ cookie }) });
-    const [row] = await db.select().from(user).where(eq(user.email, "bruno@raitec.ufc.br"));
-    expect(row?.name).toBe("Bruno Lima Souza");
-  });
-
   test("cadastro público cria membro com eixo/time e ignora tentativa de escalação de papel", async () => {
     const res = await auth.api.signUpEmail({
       body: {

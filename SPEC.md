@@ -57,7 +57,6 @@ Fonte única da verdade: `src/lib/access.ts`.
 | Enviar avaliação cruzada (`/avaliacao`) | Qualquer colega (exceto si) | Qualquer colega (exceto si) | Qualquer colega (exceto si) | Qualquer colega (exceto si) |
 | Ver relatório detalhado de avaliações de membro | Não | Não | Próprio eixo | Não |
 | Gerenciar papéis de membros (`/diretoria/membros`) | Não | Não | Não | Sim |
-| Editar o próprio perfil (`/perfil`: nome, avatar, senha, e-mail, sessões) | Sim | Sim | Sim | Sim |
 
 ---
 
@@ -139,15 +138,6 @@ Fonte única da verdade: `src/lib/access.ts`.
 
 ---
 
-### 4.9 Meu Perfil (`/perfil`)
-- Acesso pelo menu do usuário no header. Sempre sobre a própria conta; papel, eixo e time aparecem somente leitura ("definidos pela diretoria").
-- **Nome**: 3–80 caracteres, sem espaços nas pontas.
-- **Avatar**: somente URL `https://` (até 2048 caracteres), gravada em `user.image`; vazio remove. Exibido com `referrerPolicy="no-referrer"`; se a imagem não carregar, o `Avatar` volta às iniciais.
-- **Senha**: exige a senha atual; ao trocar, todas as outras sessões são encerradas e o aparelho atual recebe uma sessão nova.
-- **E-mail**: troca em duas etapas para contas verificadas (aprovação pelo e-mail atual → confirmação no novo); contas sem e-mail verificado confirmam direto no novo. A troca só acontece ao confirmar o novo endereço; endereço já em uso recebe resposta neutra (não revela contas).
-- **Sessões ativas**: lista aparelho (navegador · sistema), último acesso e IP; "Sair dos outros aparelhos" encerra todas as sessões exceto a atual.
-- **Segurança**: `/api/auth/update-user` recusa (400) qualquer tentativa de alterar `role`, `eixo`, `time`, `score` ou `verificationRequired` — esses campos só mudam por `updateMemberRole` (diretoria). Nome e avatar são validados também no hook do Better Auth, não só no formulário.
-
 ## 5. Modelo de Dados Relacional (PostgreSQL / Drizzle)
 
 ```mermaid
@@ -187,4 +177,4 @@ Tabelas auxiliares de métricas/painel (populadas via `seed.ts`): `activities`, 
 ## 7. Escopo Futuro (Fora desta Entrega)
 
 - Telas de CRUD para atividades do dashboard, metas de eixo e gestão de pontuações/ciclos de avaliação.
-- Central de notificações em tempo real.
+- Tela "Meu perfil" (edição de nome/avatar/senha) e central de notificações em tempo real.

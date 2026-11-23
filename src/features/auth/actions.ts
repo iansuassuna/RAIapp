@@ -1,9 +1,9 @@
 "use server";
 
+import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { translateAuthError } from "@/lib/auth-errors";
 import { invalidResult } from "@/lib/validation";
 import type { ActionResult } from "@/types";
 import {
@@ -13,6 +13,26 @@ import {
   resendVerificationSchema,
   resetPasswordSchema,
 } from "./schemas";
+
+function translateAuthError(error: unknown, fallback: string): string {
+  if (error instanceof APIError) {
+    const code = String((error.body as { code?: string } | undefined)?.code ?? "");
+    if (code === "INVALID_EMAIL_OR_PASSWORD" || error.status === "UNAUTHORIZED") {
+      return "E-mail ou senha inválidos.";
+    }
+    if (code === "USER_ALREADY_EXISTS" || code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL") {
+      return "Já existe uma conta cadastrada com este e-mail.";
+    }
+    if (code === "PASSWORD_TOO_SHORT") {
+      return "A senha precisa ter ao menos 8 caracteres.";
+    }
+    if (code === "INVALID_TOKEN") {
+      return "Este link é inválido ou expirou. Peça um novo e-mail de redefinição.";
+    }
+    if (error.message) return error.message;
+  }
+  return fallback;
+}
 
 export async function loginAction(input: unknown): Promise<ActionResult> {
   const parsed = loginSchema.safeParse(input);

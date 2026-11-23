@@ -3,7 +3,7 @@
 import { Layers, Shield, Users } from "lucide-react";
 import { useState } from "react";
 import { Alert, Avatar, Badge, Button, Card, EmptyState, SectionTitle, Select } from "@/components/ui";
-import { describeMember, EIXOS, ROLE_LABEL, ROLE_TONE, TIMES } from "@/config/options";
+import { describeMember, EIXOS, ROLE_LABEL, TIMES } from "@/config/options";
 import type { Eixo, Member, Role, Time } from "@/types";
 import { updateMemberRoleAction } from "../actions";
 
@@ -12,6 +12,12 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: "coordenador", label: ROLE_LABEL.coordenador },
   { value: "diretoria", label: ROLE_LABEL.diretoria },
 ];
+
+const ROLE_TONE: Record<Role, "brand" | "accent" | "warning"> = {
+  membro: "brand",
+  coordenador: "accent",
+  diretoria: "warning",
+};
 
 function MemberRoleRow({ member, isSelf }: { member: Member; isSelf: boolean }) {
   const [editing, setEditing] = useState(false);
