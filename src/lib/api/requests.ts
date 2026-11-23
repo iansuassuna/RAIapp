@@ -4,6 +4,8 @@ import {
   FINAL_PROGRESS,
   INITIAL_PROGRESS,
   NEXT_PROGRESS,
+  PROGRESS_LABEL,
+  REQUEST_KIND_LABEL,
   ROOMS,
   requestDeadline,
 } from "@/config/requests";
@@ -29,6 +31,7 @@ import {
   requestReviewerFor,
 } from "../access";
 import { addLoan, allocateToProject, availableQuantity, releaseFromRequest } from "./inventory";
+import { directorIds, eixoReviewerIds, notify } from "./notifications";
 import { denied, notFound } from "./shared";
 
 /** Entrada de requisição de membro (qualquer tipo, menos "pedido"). */
@@ -303,8 +306,27 @@ export async function createRequest(viewer: Member, input: RequestInput): Promis
       status: "pendente",
       progress: null,
     });
+
+    const eixo = viewer.eixo as Eixo;
+    await notify(
+      tx,
+      reviewer === "diretoria" ? await directorIds(tx) : await eixoReviewerIds(tx, eixo),
+      {
+        type: "requisicao-nova",
+        title: `Nova requisição: ${REQUEST_KIND_LABEL[details.kind]}`,
+        body: `${viewer.name} · ${shorten(justification)}`,
+        href: reviewer === "diretoria" ? "/diretoria" : `/eixos/${eixo}/painel`,
+      },
+      viewer.id,
+    );
     return { ok: true, id };
   });
+}
+
+/** Trecho curto para o corpo das notificações. */
+function shorten(text: string, max = 120) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }
 
 /* ---------- Análise ---------- */
@@ -363,6 +385,17 @@ export async function resolveRequest(
       })
       .where(eq(resourceRequests.id, requestId));
 
+    await notify(
+      tx,
+      [row.memberId],
+      {
+        type: "requisicao-resolvida",
+        title: `Requisição ${decision === "aprovada" ? "aprovada" : "recusada"}: ${REQUEST_KIND_LABEL[row.kind]}`,
+        body: note ? shorten(note) : `Analisada por ${viewer.name}.`,
+        href: "/minha-area/requisicoes",
+      },
+      viewer.id,
+    );
     return { ok: true };
   });
 }
@@ -394,6 +427,17 @@ export async function advanceRequest(viewer: Member, requestId: string, to: Requ
       byMemberId: viewer.id,
       at: now,
     });
+    await notify(
+      tx,
+      [row.memberId],
+      {
+        type: "requisicao-andamento",
+        title: `${REQUEST_KIND_LABEL[row.kind]}: ${PROGRESS_LABEL[to]}`,
+        body: `Andamento atualizado por ${viewer.name}.`,
+        href: "/minha-area/requisicoes",
+      },
+      viewer.id,
+    );
     return { ok: true };
   });
 }
@@ -450,6 +494,17 @@ export async function completePurchase(
       at: now,
     });
 
+    await notify(
+      tx,
+      [row.memberId],
+      {
+        type: "requisicao-andamento",
+        title: "Compra concluída",
+        body: `${item.name} ×${quantity} já está ${allocated ? "no projeto" : "com você"}.`,
+        href: "/minha-area/requisicoes",
+      },
+      viewer.id,
+    );
     return { ok: true, id: itemId };
   });
 }

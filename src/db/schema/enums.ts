@@ -48,3 +48,17 @@ export const requestProgressEnum = pgEnum("request_progress", [
   "aguardando",
   "feito",
 ]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "requisicao-nova",
+  "requisicao-resolvida",
+  "requisicao-andamento",
+  "proposta-nova",
+  "proposta-resolvida",
+  "tarefa-atribuida",
+  "tarefa-atualizada",
+  "projeto-adicionado",
+  "papel-alterado",
+  "pontos",
+  "ciclo-novo",
+]);

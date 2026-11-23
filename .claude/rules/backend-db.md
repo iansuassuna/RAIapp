@@ -34,3 +34,9 @@ paths:
 - **Ciclos de avaliação** são por data: use `getCurrentCycle(today)` / `getPreviousCycle(today)` de `lib/api/cycles.ts` (com `today` injetável nos testes). A criação automática roda em transação com `pg_advisory_xact_lock`. Não grave status de ciclo nem use cron.
 - Funções que dependem da data aceitam `today: string = todayIso()` (AAAA-MM-DD, fuso de Fortaleza) para testes determinísticos.
 - O seed é idempotente também para o ledger: só lança pontos de atividades inseridas na própria execução e ajusta `user.score` de usuários que já existiam.
+
+## Notificações (Fase 4)
+- Gere notificações com `notify(tx, destinatários, payload, actorId)` de `src/lib/api/notifications.ts`, **dentro da transação** do evento (o `pg_notify` também só é entregue no commit). Passe sempre `actorId` para não notificar quem executou a ação.
+- Para destinatários use os helpers (`eixoReviewerIds`, `directorIds`, `allUserIds`); não espalhe consultas de "quem avisar" pelas telas.
+- Ao criar um evento novo, acrescente o tipo em `notificationTypeEnum` (migration), em `NotificationType` e no ícone de `notification-row.tsx`, e cubra em `notifications.test.ts`.
+- Leitura e marcação só do próprio `viewer` (`recipientId = viewer.id` em toda query).

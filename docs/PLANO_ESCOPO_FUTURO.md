@@ -157,6 +157,8 @@ Hoje `activities`, `eixo_goals` e `eixo_metrics` só são alimentadas pelo seed.
 
 ### Fase 4 — Central de notificações em tempo real
 
+> ✅ **Concluída em 23/11/2026.** Migration `0004_notificacoes`; `notify()` em `lib/api/notifications.ts` chamado dentro das transações de requisições, propostas, tarefas, projetos, papéis, pontuação e ciclos; `LISTEN` único por processo em `lib/notification-hub.ts`; stream SSE em `app/api/notifications/stream`; sino (slot no `AppHeader`) e `/notificacoes` em `features/notificacoes`. Decisão: **sem `notification_preferences`** nesta entrega (marcada como opcional no plano; fica para quando houver envio por e-mail). Testes: `notifications.test.ts` (13), incluindo entrega real via `LISTEN/NOTIFY` e ausência de sinal em rollback.
+
 **Modelo**
 - `notifications` (`id`, `recipient_id`, `type`, `title`, `body`, `href`, `read_at`, `created_at`) com índice `(recipient_id, read_at, created_at desc)`.
 - `notification_preferences` (opcional): por tipo, ligado/desligado/e-mail.

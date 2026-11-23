@@ -45,6 +45,7 @@ docker compose run --rm app bun src/db/seed.ts
 
 - A coordenação do eixo (e a diretoria) registra atividades e ajusta pontos; cada membro vê os seus em `/atividades`. A pontuação é a soma de um histórico de lançamentos (`score_entries`): correções viram estorno, nada é apagado.
 - Os ciclos da avaliação cruzada são por data: um ciclo novo é criado automaticamente a cada mês. A diretoria ajusta datas de ciclos futuros em `/diretoria/ciclos`.
+- Notificações em tempo real (sino no header e `/notificacoes`) usam `LISTEN/NOTIFY` do Postgres + SSE; não há serviço extra para subir. Migration `0004_notificacoes`.
 - Ao atualizar o código, rode `bun run db:migrate`: a migration `0002` converte as avaliações existentes ("Novembro/26" → ciclo `2026-11`) e cria o saldo inicial de pontos de cada membro; a `0003` remove a antiga `eixo_metrics`.
 - Contas semeadas pelo `bun run db:seed` usam a senha definida em `DEV_SEED_PASSWORD` (padrão: `raitec123`), ex.:
   - Diretoria: `lucas@raitec.ufc.br`

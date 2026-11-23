@@ -4,6 +4,7 @@ import { type DbOrTx, db, newId } from "@/db";
 import { scoreEntries, user } from "@/db/schema";
 import type { ActionResult, Member, ScoreEntry, ScoreSource } from "@/types";
 import { canManageMemberScore, canViewMemberScore } from "../access";
+import { notify } from "./notifications";
 import { denied, notFound, toMember } from "./shared";
 
 const memberColumns = {
@@ -52,6 +53,18 @@ export async function addScoreEntry(
     .update(user)
     .set({ score: sql`${user.score} + ${entry.delta}` })
     .where(eq(user.id, entry.memberId));
+
+  await notify(
+    tx,
+    [entry.memberId],
+    {
+      type: "pontos",
+      title: entry.delta > 0 ? `+${entry.delta} pontos` : `${entry.delta} pontos`,
+      body: entry.reason,
+      href: "/atividades",
+    },
+    entry.createdBy,
+  );
 }
 
 export type ScoreHistory = { member: Member; score: number; entries: ScoreEntry[]; canManage: boolean };

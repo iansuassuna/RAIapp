@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, notInArray } from "drizzle-orm";
+import { TASK_STATUS_LABEL } from "@/config/options";
 import { type DbOrTx, db, newId } from "@/db";
 import {
   inventoryItems,
@@ -12,6 +13,7 @@ import {
 import type { ActionResult, Eixo, Member, Project, ProjectStatus, Task, TaskStatus } from "@/types";
 import { canManageProjects, canRequestForProject, canUpdateTaskStatus, canViewEixo } from "../access";
 import { allocateToProject, usedQuantity } from "./inventory";
+import { eixoReviewerIds, notify } from "./notifications";
 import { denied, notFound } from "./shared";
 
 export type ProjectInput = {
@@ -200,6 +202,17 @@ export async function createProject(viewer: Member, eixo: Eixo, input: ProjectIn
     if (uniqueMembers.length > 0) {
       await tx.insert(projectMembers).values(uniqueMembers.map((memberId) => ({ projectId: id, memberId })));
     }
+    await notify(
+      tx,
+      uniqueMembers,
+      {
+        type: "projeto-adicionado",
+        title: `Você entrou no projeto ${input.name}`,
+        body: `Adicionado(a) por ${viewer.name}.`,
+        href: `/eixos/${eixo}/projetos/${id}`,
+      },
+      viewer.id,
+    );
     return { ok: true, id };
   });
 }
@@ -225,6 +238,11 @@ export async function updateProject(viewer: Member, projectId: string, input: Pr
       .where(eq(projects.id, projectId));
 
     const uniqueMembers = [...new Set(input.memberIds)];
+    const previous = await tx
+      .select({ memberId: projectMembers.memberId })
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, projectId));
+    const previousIds = new Set(previous.map((p) => p.memberId));
     await tx.delete(projectMembers).where(eq(projectMembers.projectId, projectId));
     if (uniqueMembers.length > 0) {
       await tx.insert(projectMembers).values(uniqueMembers.map((memberId) => ({ projectId, memberId })));
@@ -237,6 +255,17 @@ export async function updateProject(viewer: Member, projectId: string, input: Pr
       await tx.update(tasks).set({ assigneeId: null }).where(eq(tasks.projectId, projectId));
     }
 
+    await notify(
+      tx,
+      uniqueMembers.filter((id) => !previousIds.has(id)),
+      {
+        type: "projeto-adicionado",
+        title: `Você entrou no projeto ${input.name}`,
+        body: `Adicionado(a) por ${viewer.name}.`,
+        href: `/eixos/${project.eixo}/projetos/${projectId}`,
+      },
+      viewer.id,
+    );
     return { ok: true, id: projectId };
   });
 }
@@ -282,6 +311,17 @@ export async function addTask(viewer: Member, projectId: string, input: TaskInpu
       deadline: input.deadline,
       status: "a-fazer",
     });
+    await notify(
+      tx,
+      [assigneeId],
+      {
+        type: "tarefa-atribuida",
+        title: `Nova tarefa: ${input.title}`,
+        body: `Atribuída por ${viewer.name}.`,
+        href: "/minha-area",
+      },
+      viewer.id,
+    );
     return { ok: true, id };
   });
 }
@@ -302,22 +342,46 @@ export async function updateTaskStatus(
   taskId: string,
   status: TaskStatus,
 ): Promise<ActionResult> {
-  const [row] = await db
-    .select({
-      taskId: tasks.id,
-      assigneeId: tasks.assigneeId,
-      eixo: projects.eixo,
-    })
-    .from(tasks)
-    .innerJoin(projects, eq(tasks.projectId, projects.id))
-    .where(and(eq(tasks.id, taskId), eq(tasks.projectId, projectId)))
-    .limit(1);
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({
+        taskId: tasks.id,
+        title: tasks.title,
+        status: tasks.status,
+        assigneeId: tasks.assigneeId,
+        eixo: projects.eixo,
+      })
+      .from(tasks)
+      .innerJoin(projects, eq(tasks.projectId, projects.id))
+      .where(and(eq(tasks.id, taskId), eq(tasks.projectId, projectId)))
+      .limit(1);
 
-  if (!row) return notFound("Tarefa");
-  if (!canUpdateTaskStatus(viewer, { eixo: row.eixo }, { assigneeId: row.assigneeId })) return denied();
+    if (!row) return notFound("Tarefa");
+    if (!canUpdateTaskStatus(viewer, { eixo: row.eixo }, { assigneeId: row.assigneeId })) return denied();
+    if (row.status === status) return { ok: true };
 
-  await db.update(tasks).set({ status }).where(eq(tasks.id, taskId));
-  return { ok: true };
+    await tx.update(tasks).set({ status }).where(eq(tasks.id, taskId));
+
+    // Coordenação mudou a tarefa de alguém → avisa o responsável. Responsável concluiu → avisa a coordenação.
+    const recipients =
+      viewer.id !== row.assigneeId
+        ? [row.assigneeId]
+        : status === "concluida"
+          ? await eixoReviewerIds(tx, row.eixo)
+          : [];
+    await notify(
+      tx,
+      recipients,
+      {
+        type: "tarefa-atualizada",
+        title: `Tarefa ${TASK_STATUS_LABEL[status].toLowerCase()}: ${row.title}`,
+        body: `Atualizada por ${viewer.name}.`,
+        href: viewer.id !== row.assigneeId ? "/minha-area" : `/eixos/${row.eixo}/projetos/${projectId}`,
+      },
+      viewer.id,
+    );
+    return { ok: true };
+  });
 }
 
 export async function allocateComponent(

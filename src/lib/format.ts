@@ -107,3 +107,17 @@ export function cycleDeadlineText(daysLeft: number, endsOn: string) {
   if (daysLeft === 1) return "encerra amanhã";
   return `encerra em ${daysLeft} dias (${formatShortDate(endsOn).slice(0, 5)})`;
 }
+
+/** Tempo relativo curto: "agora", "há 5 min", "há 3 h", "ontem", "há 4 dias" ou a data. */
+export function formatRelativeTime(iso: string, now: number = Date.now()) {
+  const diff = Math.max(0, now - Date.parse(iso));
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "agora";
+  if (minutes < 60) return `há ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `há ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "ontem";
+  if (days < 7) return `há ${days} dias`;
+  return formatShortDate(iso);
+}

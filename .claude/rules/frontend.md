@@ -27,18 +27,21 @@ app/(app)/…         rotas internas autenticadas — AppHeader + BottomNav + fo
   diretoria/          layout (abas; só diretoria) → page (pedidos), membros/ (papéis), membros/[memberId] (pontuação), ciclos/
   avaliacao/          avaliação cruzada entre colegas
   perfil/             Meu perfil (nome, avatar por URL, senha, e-mail, sessões ativas)
+  notificacoes/       histórico de notificações (paginado por cursor)
 app/api/auth/[...all]/ route handler do Better Auth
+app/api/notifications/stream/ SSE da central de notificações (LISTEN/NOTIFY → navegador)
 proxy.ts            Next.js 16 Proxy (redirecionamento otimista por cookie de sessão)
 components/ui/      primitivos genéricos, sem regra de negócio (exportados em ui/index.ts)
 components/brand/   Logo / LogoMark
-components/layout/  AppHeader, BottomNav, PageHeader, DevMemberSwitcher (condicional a DEV_QUICK_SWITCH)
+components/layout/  AppHeader (slot `notifications` para o sino), BottomNav, PageHeader, DevMemberSwitcher
 features/<dominio>/ components/ + schemas.ts (zod) + actions.ts ("use server"); expõe componentes em index.ts
-                    domínios: auth, dashboard, diretoria, eixos, perfil, pontuacao, projetos, requisicoes, inventario, avaliacao
+                    domínios: auth, dashboard, diretoria, eixos, notificacoes, perfil, pontuacao, projetos, requisicoes, inventario,
+                    avaliacao
 config/             options.ts (eixos, times, rótulos e tons, escala 1–5, SCORE_GOAL), activity-icons.ts, requests.ts (tipos de requisição, ciclos de
                     andamento, salas, armários, categorias), navigation.ts
 db/                 index.ts (Drizzle + postgres.js), schema/ (enums, auth, domain), seed.ts, seed-data.ts
 lib/                api/ (dados por domínio, index.ts reexporta), access.ts (permissões), auth.ts, auth-client.ts,
-                    session.ts (sessão Better Auth), dev-auth.ts, action-helpers.ts, validation.ts (zod compartilhado), mail.ts,
+                    session.ts (sessão Better Auth), notification-hub.ts (LISTEN do Postgres), dev-auth.ts, action-helpers.ts, validation.ts (zod compartilhado), mail.ts,
                     mail-templates.ts, auth-errors.ts,
                     form.ts (hook client), deadlines.ts (requisições → linhas de prazo), cycle-period.ts (períodos dos ciclos), cn.ts,
                     format.ts
