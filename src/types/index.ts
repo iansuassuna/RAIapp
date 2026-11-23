@@ -36,6 +36,27 @@ export type Activity = {
   status: ActivityStatus;
 };
 
+/** Atividade com dono e pontos (tela de atividades e gestão pela coordenação/diretoria). */
+export type MemberActivity = Activity & { memberId: string; points: number };
+
+export type ScoreSource = "atividade" | "ajuste";
+
+/** Lançamento do histórico de pontuação (ledger). */
+export type ScoreEntry = {
+  id: string;
+  delta: number;
+  source: ScoreSource;
+  reason: string;
+  activityId: string | null;
+  createdByName: string | null;
+  createdAt: string; // ISO
+};
+
+export type EixoGoal = { id: string; eixo: Eixo; title: string; deadline: string; status: ActivityStatus };
+
+/** Ciclo de avaliação por data. */
+export type EvaluationCyclePeriod = { id: string; label: string; startsOn: string; endsOn: string };
+
 export type Trajectory = {
   capacitacoes: number;
   cursos: number;
@@ -219,7 +240,12 @@ export type EvaluationRecord = {
 };
 
 export type EvaluationCycle = {
+  /** Id do ciclo vigente ("AAAA-MM"); o formulário envia de volta para detectar ciclo encerrado. */
+  id: string;
   label: string;
+  endsOn: string;
+  /** Dias até o fim do ciclo (0 = termina hoje). */
+  daysLeft: number;
   criteria: EvaluationCriterion[];
   /** Colegas que o membro atual deve avaliar (todos os eixos, exceto ele mesmo). */
   colleagues: Colleague[];

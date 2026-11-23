@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
-import { isEixo, isTime } from "@/config/options";
+import { isEixo, isTime, SCORE_ATTENTION_THRESHOLD } from "@/config/options";
 import { db } from "@/db";
 import { projectMembers, projects, tasks, user } from "@/db/schema";
 import type { ActionResult, Eixo, EixoMember, EixoMemberRole, Member, Role, Time } from "@/types";
@@ -68,7 +68,7 @@ export async function getEixoMembers(viewer: Member, eixo: Eixo): Promise<EixoMe
   return rows.flatMap((row): EixoMember[] => {
     const member = toMember(row);
     if (!member || member.role === "diretoria") return [];
-    const standing = row.score >= 60 ? ("em-dia" as const) : ("atencao" as const);
+    const standing = row.score >= SCORE_ATTENTION_THRESHOLD ? ("em-dia" as const) : ("atencao" as const);
     return [{ ...(member as EixoMemberRole), score: row.score, standing }];
   });
 }

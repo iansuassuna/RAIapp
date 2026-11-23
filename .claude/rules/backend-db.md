@@ -27,3 +27,10 @@ paths:
 - **Evite N+1**: agregações (como estoque em uso em `getInventory`) devem usar `SUM`/`GROUP BY` em SQL ou carregar coleções em lote (`inArray`), nunca queries dentro de `.map()` / `for`.
 - Nunca use `sql.raw` com entrada do usuário; use sempre queries parametrizadas do Drizzle.
 - Regras temporais derivadas (ex.: reunião passada → `realizada`, autorização vencida → `expirada`) continuam sendo calculadas por `effectiveProgress()`, não gravadas em cron.
+
+## Pontuação, Atividades e Ciclos (Fase 2)
+- **Ledger**: toda mudança de pontos passa por `addScoreEntry(tx, …)` em `src/lib/api/scores.ts`, que grava em `score_entries` e atualiza `user.score` na mesma transação. Nunca faça `update user set score = …` em outro lugar; o invariante `user.score = SUM(score_entries.delta)` é testado em `scoring.test.ts`.
+- Lançamentos nunca são apagados: correções e exclusões de atividade geram estorno. `syncActivityCredit` lança só a diferença entre o que a atividade deve render (pontos se concluída, senão 0) e o que já creditou — é idempotente.
+- **Ciclos de avaliação** são por data: use `getCurrentCycle(today)` / `getPreviousCycle(today)` de `lib/api/cycles.ts` (com `today` injetável nos testes). A criação automática roda em transação com `pg_advisory_xact_lock`. Não grave status de ciclo nem use cron.
+- Funções que dependem da data aceitam `today: string = todayIso()` (AAAA-MM-DD, fuso de Fortaleza) para testes determinísticos.
+- O seed é idempotente também para o ledger: só lança pontos de atividades inseridas na própria execução e ajusta `user.score` de usuários que já existiam.

@@ -3,13 +3,17 @@
  * Funções que dependem de permissão recebem o membro e aplicam `lib/access.ts` aqui,
  * para que dados de outro eixo nunca cheguem à página.
  */
-import { desc, eq, isNull, or } from "drizzle-orm";
-import { describeMember } from "@/config/options";
+import { desc, eq } from "drizzle-orm";
+import { describeMember, SCORE_GOAL } from "@/config/options";
 import { db } from "@/db";
 import { activities, inventoryItems, projects, user } from "@/db/schema";
 import type { Activity, Member, Performance, Trajectory } from "@/types";
 import { toMember } from "./shared";
 
+/**
+ * Painel inicial do membro: pontuação, trajetória e atividades recentes — sempre só as DELE.
+ * Trajetória conta atividades concluídas por tipo; "atividades registradas" conta todas.
+ */
 export async function getDashboard(viewer: Member): Promise<{
   performance: Performance;
   trajectory: Trajectory;
@@ -26,33 +30,36 @@ export async function getDashboard(viewer: Member): Promise<{
         status: activities.status,
       })
       .from(activities)
-      .where(or(isNull(activities.memberId), eq(activities.memberId, viewer.id)))
-      .orderBy(desc(activities.date)),
+      .where(eq(activities.memberId, viewer.id))
+      .orderBy(desc(activities.date), desc(activities.createdAt)),
   ]);
 
-  const capacitacoes = activityRows.filter((a) => a.type === "capacitacao").length;
-  const cursos = activityRows.filter((a) => a.type === "curso").length;
-  const visitas = activityRows.filter((a) => a.type === "visita").length;
+  const concluded = activityRows.filter((a) => a.status === "concluida");
+  const countType = (type: Activity["type"]) => concluded.filter((a) => a.type === type).length;
 
   return {
-    performance: { score: userRow?.score ?? 0, goal: 100 },
+    performance: { score: userRow?.score ?? 0, goal: SCORE_GOAL },
     trajectory: {
-      capacitacoes,
-      cursos,
-      visitas,
+      capacitacoes: countType("capacitacao"),
+      cursos: countType("curso"),
+      visitas: countType("visita"),
       atividades: activityRows.length,
     },
-    activities: activityRows,
+    activities: activityRows.slice(0, 5),
   };
 }
 
+export * from "./activities";
+export * from "./cycles";
 export * from "./eixos";
 export * from "./evaluations";
+export * from "./goals";
 export * from "./inventory";
 export * from "./members";
 export * from "./profile";
 export * from "./projects";
 export * from "./requests";
+export * from "./scores";
 
 /** Mapas id → nome para exibir listas sem buscar item por item. */
 export async function getLookups() {

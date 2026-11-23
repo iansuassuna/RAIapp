@@ -15,6 +15,20 @@
       "when": 1795375316639,
       "tag": "0001_email_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795406414943,
+      "tag": "0002_fase2_pontuacao_ciclos",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795406433341,
+      "tag": "0003_remove_eixo_metrics",
+      "breakpoints": true
     }
   ]
 }

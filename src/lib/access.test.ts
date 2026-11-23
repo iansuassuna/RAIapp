@@ -2,9 +2,12 @@ import { describe, expect, test } from "bun:test";
 import {
   assignableOwners,
   canApproveInventoryProposal,
+  canEditEvaluationCycle,
   canEditInventoryItem,
   canManageEixo,
+  canManageEixoGoals,
   canManageMemberRoles,
+  canManageMemberScore,
   canProposeInventoryChange,
   canRequestForProject,
   canResolveRequest,
@@ -13,6 +16,7 @@ import {
   canUseCoordinationPanel,
   canViewEixo,
   canViewMemberEvaluations,
+  canViewMemberScore,
   getAccessibleEixos,
   hasMemberArea,
   isPendingEmailVerification,
@@ -130,5 +134,42 @@ describe("verificação de e-mail", () => {
     expect(isPendingEmailVerification({ verificationRequired: true, emailVerified: true })).toBe(false);
     expect(isPendingEmailVerification({ verificationRequired: false, emailVerified: false })).toBe(false);
     expect(isPendingEmailVerification({ verificationRequired: null, emailVerified: false })).toBe(false);
+  });
+});
+
+describe("pontuação, metas e ciclos", () => {
+  const coordInov = { id: "m1", role: "coordenador", eixo: "inovacao", time: null } as const;
+  const coordTec = { id: "m5", role: "coordenador", eixo: "tecnico-sustentavel", time: null } as const;
+  const diretoria = { id: "d1", role: "diretoria", eixo: null, time: null } as const;
+  const brunoInov = { id: "m2", role: "membro", eixo: "inovacao", time: "midias" } as const;
+
+  test("coordenação gerencia pontos só dos membros do próprio eixo; diretoria de todos; ninguém de si", () => {
+    expect(canManageMemberScore(coordInov, brunoInov)).toBe(true);
+    expect(canManageMemberScore(coordTec, brunoInov)).toBe(false);
+    expect(canManageMemberScore(coordInov, coordTec)).toBe(false);
+    expect(canManageMemberScore(diretoria, coordInov)).toBe(true);
+    expect(canManageMemberScore(diretoria, brunoInov)).toBe(true);
+    expect(canManageMemberScore(brunoInov, brunoInov)).toBe(false);
+    expect(canManageMemberScore(diretoria, diretoria)).toBe(false);
+  });
+
+  test("ver pontuação: o próprio membro ou quem gerencia", () => {
+    expect(canViewMemberScore(brunoInov, brunoInov)).toBe(true);
+    expect(canViewMemberScore({ id: "m4", role: "membro", eixo: "inovacao" }, brunoInov)).toBe(false);
+    expect(canViewMemberScore(coordTec, brunoInov)).toBe(false);
+  });
+
+  test("metas: só a coordenação do eixo", () => {
+    expect(canManageEixoGoals(coordInov, "inovacao")).toBe(true);
+    expect(canManageEixoGoals(coordInov, "tecnico-sustentavel")).toBe(false);
+    expect(canManageEixoGoals(diretoria, "inovacao")).toBe(false);
+    expect(canManageEixoGoals(brunoInov, "inovacao")).toBe(false);
+  });
+
+  test("ciclos: só a diretoria e só antes de começarem", () => {
+    expect(canEditEvaluationCycle(diretoria, { startsOn: "2026-12-01" }, "2026-11-23")).toBe(true);
+    expect(canEditEvaluationCycle(diretoria, { startsOn: "2026-11-01" }, "2026-11-23")).toBe(false);
+    expect(canEditEvaluationCycle(diretoria, { startsOn: "2026-11-23" }, "2026-11-23")).toBe(false);
+    expect(canEditEvaluationCycle(coordInov, { startsOn: "2026-12-01" }, "2026-11-23")).toBe(false);
   });
 });

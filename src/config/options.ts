@@ -50,6 +50,9 @@ export const ACTIVITY_STATUS_LABEL: Record<ActivityStatus, string> = {
   pendente: "Pendente",
 };
 
+export const ACTIVITY_TYPES = Object.keys(ACTIVITY_TYPE_LABEL) as ActivityType[];
+export const ACTIVITY_STATUSES = Object.keys(ACTIVITY_STATUS_LABEL) as ActivityStatus[];
+
 /** Cor do Badge para cada status (prop `tone` do Badge). */
 export const ACTIVITY_STATUS_TONE: Record<ActivityStatus, "success" | "warning" | "brand"> = {
   concluida: "success",
@@ -102,8 +105,30 @@ export const REQUEST_STATUS_TONE: Record<RequestStatus, "warning" | "success" | 
   recusada: "danger",
 };
 
-/** Ciclos da avaliação cruzada. Troque quando houver backend. */
-export const EVALUATION_CYCLES = { current: "Novembro/26", previous: "Outubro/26" } as const;
+/** Meses usados nos rótulos dos ciclos de avaliação ("Novembro/26"). */
+export const MONTH_LABELS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+] as const;
+
+/** Meta de pontuação individual por membro (painel de desempenho e média do eixo). */
+export const SCORE_GOAL = 100;
+
+/** Pontos máximos de uma única atividade (também garantido por CHECK no banco). */
+export const ACTIVITY_MAX_POINTS = 100;
+
+/** Abaixo disso, o membro aparece como "Atenção" na lista do eixo. */
+export const SCORE_ATTENTION_THRESHOLD = 60;
 
 export const EVALUATION_CRITERIA: EvaluationCriterion[] = [
   { id: "comprometimento", label: "Comprometimento", description: "Cumpre prazos e está presente nas atividades." },

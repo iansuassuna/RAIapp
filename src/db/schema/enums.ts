@@ -8,6 +8,8 @@ export const timeEnum = pgEnum("member_time", ["processos", "midias"]);
 
 export const activityTypeEnum = pgEnum("activity_type", ["capacitacao", "curso", "visita", "projeto"]);
 
+export const scoreSourceEnum = pgEnum("score_source", ["atividade", "ajuste"]);
+
 export const activityStatusEnum = pgEnum("activity_status", ["concluida", "em-andamento", "pendente"]);
 
 export const projectStatusEnum = pgEnum("project_status", ["planejamento", "em-andamento", "concluido"]);

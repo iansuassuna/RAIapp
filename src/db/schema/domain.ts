@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  date,
   doublePrecision,
   index,
   integer,
@@ -24,6 +25,7 @@ import {
   requestProgressEnum,
   requestReviewerEnum,
   requestStatusEnum,
+  scoreSourceEnum,
   taskStatusEnum,
 } from "./enums";
 
@@ -208,11 +210,33 @@ export const loans = pgTable(
 
 /* ---------- Avaliação Cruzada ---------- */
 
+/**
+ * Ciclos de avaliação por data (um por mês, criados automaticamente). O ciclo vigente é o que cobre a data
+ * de hoje — nenhum status é gravado. `id` = "AAAA-MM" do mês de criação; `label` é o rótulo exibido.
+ * Períodos não se sobrepõem (validado em transação em `lib/api/cycles.ts`).
+ */
+export const evaluationCycles = pgTable(
+  "evaluation_cycles",
+  {
+    id: text("id").primaryKey(),
+    label: text("label").notNull(),
+    startsOn: date("starts_on", { mode: "string" }).notNull(),
+    endsOn: date("ends_on", { mode: "string" }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    check("evaluation_cycles_period_check", sql`${table.startsOn} <= ${table.endsOn}`),
+    uniqueIndex("evaluation_cycles_starts_on_unique").on(table.startsOn),
+  ],
+);
+
 export const evaluations = pgTable(
   "evaluations",
   {
     id: text("id").primaryKey(),
-    cycle: text("cycle").notNull(),
+    cycle: text("cycle")
+      .notNull()
+      .references(() => evaluationCycles.id, { onDelete: "restrict" }),
     evaluatorId: text("evaluator_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -230,25 +254,57 @@ export const evaluations = pgTable(
   ],
 );
 
-/* ---------- Dashboard & Métricas de Eixo (Opção A: persistidas via seed) ---------- */
+/* ---------- Atividades, Pontuação e Metas ---------- */
 
-export const activities = pgTable("activities", {
-  id: text("id").primaryKey(),
-  memberId: text("member_id").references(() => user.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  type: activityTypeEnum("type").notNull(),
-  date: text("date").notNull(),
-  status: activityStatusEnum("status").notNull(),
-});
+/**
+ * Atividade de um membro (capacitação, curso, visita, projeto). Registrada pela coordenação do eixo
+ * ou pela diretoria. Pontos só contam quando `status = 'concluida'` (lançados em `score_entries`).
+ * `member_id` nulo = registro legado sem dono: não aparece nem conta para ninguém.
+ */
+export const activities = pgTable(
+  "activities",
+  {
+    id: text("id").primaryKey(),
+    memberId: text("member_id").references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    type: activityTypeEnum("type").notNull(),
+    date: date("date", { mode: "string" }).notNull(),
+    status: activityStatusEnum("status").notNull(),
+    points: integer("points").notNull().default(0),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    check("activities_points_check", sql`${table.points} >= 0 AND ${table.points} <= 100`),
+    index("activities_member_date_idx").on(table.memberId, table.date),
+  ],
+);
 
-export const eixoMetrics = pgTable("eixo_metrics", {
-  eixo: eixoEnum("eixo").primaryKey(),
-  score: integer("score").notNull().default(0),
-  goal: integer("goal").notNull().default(100),
-  activitiesCount: integer("activities_count").notNull().default(0),
-  processosScore: integer("processos_score").notNull().default(0),
-  midiasScore: integer("midias_score").notNull().default(0),
-});
+/**
+ * Histórico (ledger) da pontuação. `user.score` é sempre `SUM(delta)` deste membro e é atualizado na
+ * mesma transação de cada lançamento. Nada é apagado: correções geram lançamentos de estorno.
+ */
+export const scoreEntries = pgTable(
+  "score_entries",
+  {
+    id: text("id").primaryKey(),
+    memberId: text("member_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    delta: integer("delta").notNull(),
+    source: scoreSourceEnum("source").notNull(),
+    activityId: text("activity_id").references(() => activities.id, { onDelete: "set null" }),
+    reason: text("reason").notNull(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    check("score_entries_delta_check", sql`${table.delta} <> 0`),
+    check("score_entries_reason_check", sql`length(trim(${table.reason})) > 0`),
+    index("score_entries_member_idx").on(table.memberId, table.createdAt),
+    index("score_entries_activity_idx").on(table.activityId),
+  ],
+);
 
 export const eixoGoals = pgTable(
   "eixo_goals",
@@ -256,8 +312,10 @@ export const eixoGoals = pgTable(
     id: text("id").primaryKey(),
     eixo: eixoEnum("eixo").notNull(),
     title: text("title").notNull(),
-    deadline: text("deadline").notNull(),
+    deadline: date("deadline", { mode: "string" }).notNull(),
     status: activityStatusEnum("status").notNull(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [index("eixo_goals_eixo_idx").on(table.eixo)],
 );

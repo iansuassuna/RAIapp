@@ -1,9 +1,12 @@
 import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
-import { describeMember, EVALUATION_CRITERIA, EVALUATION_CYCLES } from "@/config/options";
+import { describeMember, EVALUATION_CRITERIA } from "@/config/options";
 import { db, newId } from "@/db";
 import { evaluations, user } from "@/db/schema";
 import type { ActionResult, Eixo, EvaluationCycle, EvaluationRecord, Member } from "@/types";
 import { canViewMemberEvaluations } from "../access";
+import { daysBetween } from "../cycle-period";
+import { todayIso } from "../format";
+import { getCurrentCycle, getPreviousCycle } from "./cycles";
 import { notFound, toMember } from "./shared";
 
 function mapEvaluation(row: typeof evaluations.$inferSelect): EvaluationRecord {
@@ -35,7 +38,8 @@ export function overallAverage(records: EvaluationRecord[]): number | null {
 }
 
 /** Ciclo atual para o membro: colegas de todos os eixos (menos ele), o que já enviou e as médias recebidas. */
-export async function getEvaluationCycle(viewer: Member): Promise<EvaluationCycle> {
+export async function getEvaluationCycle(viewer: Member, today: string = todayIso()): Promise<EvaluationCycle> {
+  const [current, previous] = await Promise.all([getCurrentCycle(today), getPreviousCycle(today)]);
   const [colleagueRows, submittedRows, receivedRows] = await Promise.all([
     db
       .select({
@@ -53,11 +57,13 @@ export async function getEvaluationCycle(viewer: Member): Promise<EvaluationCycl
     db
       .select()
       .from(evaluations)
-      .where(and(eq(evaluations.cycle, EVALUATION_CYCLES.current), eq(evaluations.evaluatorId, viewer.id))),
-    db
-      .select()
-      .from(evaluations)
-      .where(and(eq(evaluations.cycle, EVALUATION_CYCLES.previous), eq(evaluations.evaluateeId, viewer.id))),
+      .where(and(eq(evaluations.cycle, current.id), eq(evaluations.evaluatorId, viewer.id))),
+    previous
+      ? db
+          .select()
+          .from(evaluations)
+          .where(and(eq(evaluations.cycle, previous.id), eq(evaluations.evaluateeId, viewer.id)))
+      : Promise.resolve([]),
   ]);
 
   const colleagues = colleagueRows
@@ -71,19 +77,40 @@ export async function getEvaluationCycle(viewer: Member): Promise<EvaluationCycl
 
   const received = averageByCriterion(receivedRows.map(mapEvaluation));
 
-  return { label: EVALUATION_CYCLES.current, criteria: EVALUATION_CRITERIA, colleagues, submitted, received };
+  return {
+    id: current.id,
+    label: current.label,
+    endsOn: current.endsOn,
+    daysLeft: daysBetween(today, current.endsOn),
+    criteria: EVALUATION_CRITERIA,
+    colleagues,
+    submitted,
+    received,
+  };
 }
 
-/** Envia (ou atualiza) a avaliação do membro sobre um colega no ciclo atual. */
+/**
+ * Envia (ou atualiza) a avaliação do membro sobre um colega no ciclo vigente. `cycleId` é o ciclo que o
+ * formulário exibia: se ele já encerrou, o envio é recusado (em vez de cair silenciosamente no ciclo novo).
+ */
 export async function submitEvaluation(
   viewer: Member,
   evaluateeId: string,
-  input: { ratings: Record<string, number>; comment: string },
+  input: { ratings: Record<string, number>; comment: string; cycleId?: string },
+  today: string = todayIso(),
 ): Promise<ActionResult> {
   if (evaluateeId === viewer.id) return { ok: false, error: "Você não pode se autoavaliar." };
 
   const [target] = await db.select({ id: user.id }).from(user).where(eq(user.id, evaluateeId)).limit(1);
   if (!target) return notFound("Colega");
+
+  const current = await getCurrentCycle(today);
+  if (input.cycleId && input.cycleId !== current.id) {
+    return {
+      ok: false,
+      error: `Este ciclo de avaliação já encerrou. Recarregue a página para avaliar no ciclo ${current.label}.`,
+    };
+  }
 
   const now = new Date();
   const id = newId("e");
@@ -91,7 +118,7 @@ export async function submitEvaluation(
     .insert(evaluations)
     .values({
       id,
-      cycle: EVALUATION_CYCLES.current,
+      cycle: current.id,
       evaluatorId: viewer.id,
       evaluateeId,
       ratings: input.ratings,
@@ -122,7 +149,11 @@ export type MemberEvaluationReport = {
 };
 
 /** Avaliações detalhadas recebidas por um membro (coordenação do eixo). Null = sem acesso ou não encontrado. */
-export async function getMemberEvaluations(viewer: Member, memberId: string): Promise<MemberEvaluationReport | null> {
+export async function getMemberEvaluations(
+  viewer: Member,
+  memberId: string,
+  today: string = todayIso(),
+): Promise<MemberEvaluationReport | null> {
   const [memberRow] = await db
     .select({
       id: user.id,
@@ -139,11 +170,20 @@ export async function getMemberEvaluations(viewer: Member, memberId: string): Pr
   const member = memberRow ? toMember(memberRow) : null;
   if (!member || !canViewMemberEvaluations(viewer, member)) return null;
 
-  const targetCycles = [EVALUATION_CYCLES.current, EVALUATION_CYCLES.previous];
+  const [current, previous] = await Promise.all([getCurrentCycle(today), getPreviousCycle(today)]);
+  const targetCycles = previous ? [current, previous] : [current];
   const rows = await db
     .select()
     .from(evaluations)
-    .where(and(eq(evaluations.evaluateeId, memberId), inArray(evaluations.cycle, targetCycles)))
+    .where(
+      and(
+        eq(evaluations.evaluateeId, memberId),
+        inArray(
+          evaluations.cycle,
+          targetCycles.map((c) => c.id),
+        ),
+      ),
+    )
     .orderBy(desc(evaluations.submittedAt));
 
   const evaluatorIds = [...new Set(rows.map((r) => r.evaluatorId))];
@@ -164,10 +204,10 @@ export async function getMemberEvaluations(viewer: Member, memberId: string): Pr
       : [];
   const evaluatorById = new Map(evaluatorRows.map((r) => [r.id, toMember(r)]));
 
-  const cycles = targetCycles.map((label) => {
-    const records = rows.filter((r) => r.cycle === label).map(mapEvaluation);
+  const cycles = targetCycles.map((cycle) => {
+    const records = rows.filter((r) => r.cycle === cycle.id).map(mapEvaluation);
     return {
-      label,
+      label: cycle.label,
       averages: averageByCriterion(records),
       overall: overallAverage(records),
       evaluations: records.map((r) => {
@@ -184,11 +224,13 @@ export async function getMemberEvaluations(viewer: Member, memberId: string): Pr
 }
 
 /** Média geral da avaliação cruzada recebida pelos membros de um eixo no ciclo anterior. */
-export async function eixoEvaluationAverage(eixo: Eixo): Promise<number | null> {
+export async function eixoEvaluationAverage(eixo: Eixo, today: string = todayIso()): Promise<number | null> {
+  const previous = await getPreviousCycle(today);
+  if (!previous) return null;
   const rows = await db
     .select({ evaluations })
     .from(evaluations)
     .innerJoin(user, eq(evaluations.evaluateeId, user.id))
-    .where(and(eq(evaluations.cycle, EVALUATION_CYCLES.previous), eq(user.eixo, eixo)));
+    .where(and(eq(evaluations.cycle, previous.id), eq(user.eixo, eixo)));
   return overallAverage(rows.map((r) => mapEvaluation(r.evaluations)));
 }
