@@ -5,19 +5,31 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { user } from "@/db/schema";
+import { isPendingEmailVerification } from "@/lib/access";
 import { toMember } from "@/lib/api/shared";
 import { auth } from "@/lib/auth";
 import { isDevQuickSwitchEnabled } from "@/lib/dev-auth";
 import type { Member } from "@/types";
 
+export type SessionState =
+  | { status: "anonymous" }
+  | { status: "unverified"; email: string; name: string }
+  | { status: "active"; member: Member };
+
 /**
- * Retorna o membro autenticado pela sessão real do Better Auth, ou `null` se anônimo.
- * Deduplicado por requisição via `React.cache()`.
+ * Estado da sessão real do Better Auth, deduplicado por requisição via `React.cache()`.
+ * `unverified`: conta criada pelo cadastro novo (`verificationRequired`) que ainda não confirmou o e-mail —
+ * tem sessão, mas não acessa o app nem executa Server Actions até verificar.
  */
-export const getSessionMember = cache(async (): Promise<Member | null> => {
+export const getSessionState = cache(async (): Promise<SessionState> => {
   const current = await auth.api.getSession({ headers: await headers() });
-  if (!current?.user) return null;
-  return toMember({
+  if (!current?.user) return { status: "anonymous" };
+
+  if (isPendingEmailVerification(current.user)) {
+    return { status: "unverified", email: current.user.email, name: current.user.name };
+  }
+
+  const member = toMember({
     id: current.user.id,
     name: current.user.name,
     email: current.user.email,
@@ -26,13 +38,21 @@ export const getSessionMember = cache(async (): Promise<Member | null> => {
     eixo: current.user.eixo ? String(current.user.eixo) : null,
     time: current.user.time ? String(current.user.time) : null,
   });
+  return member ? { status: "active", member } : { status: "anonymous" };
 });
 
-/** Exige sessão válida em rotas autenticadas de `(app)`. */
+/** Membro autenticado e liberado (e-mail verificado quando exigido), ou `null`. */
+export async function getSessionMember(): Promise<Member | null> {
+  const state = await getSessionState();
+  return state.status === "active" ? state.member : null;
+}
+
+/** Exige sessão válida em rotas autenticadas de `(app)`. Conta nova sem e-mail verificado vai para `/verificar-email`. */
 export async function getCurrentMember(): Promise<Member> {
-  const member = await getSessionMember();
-  if (!member) redirect("/login");
-  return member;
+  const state = await getSessionState();
+  if (state.status === "unverified") redirect("/verificar-email");
+  if (state.status === "anonymous") redirect("/login");
+  return state.member;
 }
 
 /**

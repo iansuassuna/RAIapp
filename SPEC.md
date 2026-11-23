@@ -63,10 +63,18 @@ Fonte única da verdade: `src/lib/access.ts`.
 ## 4. Módulos Funcionais
 
 ### 4.1 Autenticação e Sessão
-- **Rotas públicas**: `/login`, `/cadastro`.
+- **Rotas públicas**: `/login`, `/cadastro`, `/esqueci-senha`, `/redefinir-senha`, `/verificar-email`.
 - **Cadastro (`/cadastro`)**: exige nome (≥ 3 chars), e-mail único, senha (≥ 8 chars) + confirmação, `eixo` e `time`. Cria conta sempre com `role = "membro"` (`role` bloqueado para input externo).
 - **Login (`/login`)**: e-mail + senha via Better Auth (`signInEmail`); erros renderizados inline com `<Alert tone="danger">`.
 - **Logout**: ação server-side (`logoutAction`) que revoga a sessão no banco, limpa o cookie e redireciona para `/login`.
+- **Verificação de e-mail (só para cadastros novos)**:
+  - Toda conta criada por `/cadastro` nasce com `user.verification_required = true` e recebe um link de confirmação (expira em 1 h). Contas anteriores (`false`) não são afetadas.
+  - Enquanto não verificar, a conta tem sessão mas `getSessionState()` a trata como `unverified`: rotas de `(app)` redirecionam para `/verificar-email` e Server Actions são negadas.
+  - `/verificar-email` mostra o e-mail pendente, permite reenviar (cooldown de 60 s) e sair; link inválido/expirado volta com `?error=…`. O link válido confirma o e-mail, faz login automático e leva ao dashboard.
+- **Esqueceu sua senha? (`/esqueci-senha` → `/redefinir-senha`)**:
+  - Resposta sempre neutra (não revela se o e-mail tem conta). Link de uso único, expira em 1 h.
+  - Ao redefinir, todas as sessões da conta são revogadas (`revokeSessionsOnPasswordReset`) e o usuário volta a `/login?senha=redefinida`.
+- **E-mail transacional** (`src/lib/mail.ts`): driver `resend` (API HTTP do Resend via `fetch`, padrão em produção; exige `RESEND_API_KEY` e `MAIL_FROM` com domínio verificado), `console` (padrão em dev; imprime o e-mail com o link no log) e `memory` (sempre em testes). Falhas de envio são registradas e não quebram o cadastro.
 - **Proteção de rotas**:
   - `src/proxy.ts` redireciona anônimos (sem cookie de sessão) em rotas protegidas para `/login`.
   - `app/(auth)/layout.tsx` redireciona para `/dashboard` quem acessa `/login` ou `/cadastro` com sessão **válida no banco** (cookie órfão não causa loop).
@@ -168,6 +176,5 @@ Tabelas auxiliares de métricas/painel (populadas via `seed.ts`): `activities`, 
 
 ## 7. Escopo Futuro (Fora desta Entrega)
 
-- Verificação de e-mail e fluxo "Esqueceu sua senha?" com provedor SMTP / Mailpit.
 - Telas de CRUD para atividades do dashboard, metas de eixo e gestão de pontuações/ciclos de avaliação.
 - Tela "Meu perfil" (edição de nome/avatar/senha) e central de notificações em tempo real.

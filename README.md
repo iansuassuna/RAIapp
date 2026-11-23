@@ -36,6 +36,10 @@ docker compose run --rm app bun src/db/seed.ts
 
 - A autenticação é gerenciada pelo **Better Auth** (`/api/auth/[...all]`, sessões persistidas no PostgreSQL, cookies HTTP-only assinados e proteção via `src/proxy.ts` + `src/lib/session.ts`).
 - O cadastro público (`/cadastro`) cria contas sempre com papel **`membro`**. A **diretoria** promove/altera papéis em `/diretoria/membros`.
+- Contas novas precisam **confirmar o e-mail** antes de usar o app; "Esqueceu sua senha?" envia um link de redefinição.
+  - Em desenvolvimento (`MAIL_DRIVER=console`), os e-mails **não são enviados**: o link aparece no log do `bun run dev` (procure por `[mail:console]`).
+  - Em produção (`MAIL_DRIVER=resend`), defina `RESEND_API_KEY` e `MAIL_FROM` com um domínio verificado no Resend (registros SPF/DKIM).
+  - Após atualizar o código, rode `bun run db:migrate` (migration `0001_email_verification`).
 - Contas semeadas pelo `bun run db:seed` usam a senha definida em `DEV_SEED_PASSWORD` (padrão: `raitec123`), ex.:
   - Diretoria: `lucas@raitec.ufc.br`
   - Coordenação (Inovação): `ana@raitec.ufc.br`

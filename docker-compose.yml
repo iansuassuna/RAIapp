@@ -50,6 +50,9 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-in-production-min-32-chars!!}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       DEV_QUICK_SWITCH: "false"
+      MAIL_DRIVER: ${MAIL_DRIVER:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     ports:
       - "${APP_PORT:-3000}:3000"
 

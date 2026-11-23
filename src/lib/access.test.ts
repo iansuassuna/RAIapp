@@ -15,6 +15,7 @@ import {
   canViewMemberEvaluations,
   getAccessibleEixos,
   hasMemberArea,
+  isPendingEmailVerification,
   requestReviewerFor,
 } from "./access";
 
@@ -120,5 +121,14 @@ describe("minha área", () => {
     expect(hasMemberArea(membroMidias)).toBe(true);
     expect(hasMemberArea({ role: "coordenador", eixo: "inovacao" })).toBe(true);
     expect(hasMemberArea({ role: "diretoria", eixo: null })).toBe(false);
+  });
+});
+
+describe("verificação de e-mail", () => {
+  test("só bloqueia contas novas (verificationRequired) ainda não verificadas", () => {
+    expect(isPendingEmailVerification({ verificationRequired: true, emailVerified: false })).toBe(true);
+    expect(isPendingEmailVerification({ verificationRequired: true, emailVerified: true })).toBe(false);
+    expect(isPendingEmailVerification({ verificationRequired: false, emailVerified: false })).toBe(false);
+    expect(isPendingEmailVerification({ verificationRequired: null, emailVerified: false })).toBe(false);
   });
 });

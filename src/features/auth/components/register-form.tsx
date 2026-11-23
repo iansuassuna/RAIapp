@@ -13,7 +13,7 @@ export function RegisterForm() {
   const { errors, formError, loading, handleSubmit, handleChange } = useFormSubmit(registerSchema, async (data) => {
     const result = await registerAction(data);
     if (result.ok) {
-      router.push("/dashboard");
+      router.push("/verificar-email");
       router.refresh();
     }
     return result;

@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "verification_required" boolean DEFAULT false NOT NULL;

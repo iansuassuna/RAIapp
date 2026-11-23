@@ -43,6 +43,14 @@ export function canReviewDirectorRequests(viewer: Viewer) {
   return viewer.role === "diretoria";
 }
 
+/**
+ * Conta criada pelo cadastro novo (`verificationRequired`) que ainda não confirmou o e-mail:
+ * tem sessão, mas não acessa o app. Contas antigas (`verificationRequired = false`) não são afetadas.
+ */
+export function isPendingEmailVerification(user: { verificationRequired?: boolean | null; emailVerified: boolean }) {
+  return Boolean(user.verificationRequired) && !user.emailVerified;
+}
+
 /** "Minha área" (projetos afiliados, tarefas e requisições): membros e coordenação. A diretoria usa `/diretoria`. */
 export function hasMemberArea(viewer: Viewer) {
   return viewer.role !== "diretoria";
